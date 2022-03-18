@@ -73,7 +73,7 @@
         <div class="content markdown">
             <h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
 <h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>详见前文</p>
-<h2 id="0x03-知识要点"><a href="#0x03-知识要点" class="headerlink" title="0x03-知识要点"></a>0x03-知识要点</h2><p>官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 <code>php think run</code>，启动之后会在终端滚动显示应用运行的情况。通过测试，当通过 <code>system</code> 函数在终端下执行如下形式，<code>system([],&quot;`whoami\`&quot;)</code>，可正式执行 <code>whoami</code> 函数，这是由于 shell 中的优先级高，所以会先执行&#96;&#96;中的内容，再把执行结果拼接成一个新命令，但是实际上system函数是报错的，所以实际环境不一定会显示出执行后的报错信息。</p>
+<h2 id="0x03-知识要点"><a href="#0x03-知识要点" class="headerlink" title="0x03-知识要点"></a>0x03-知识要点</h2><p>官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 <code>php think run</code>，启动之后会在终端滚动显示应用运行的情况。通过测试，当通过 <code>system</code> 函数在终端下执行如下形式，<code>system([],&quot;`whoami`&quot;)</code>，可正式执行 <code>whoami</code> 函数，这是由于 shell 中的优先级高，所以会先执行 &#96;&#96; 中的内容，再把执行结果拼接成一个新命令，但是实际上system函数是报错的，所以实际环境不一定会显示出执行后的报错信息。</p>
 <p><img src="https://raw.githubusercontent.com/sing3r/image/main/hexoImage16286640471.png"></p>
 <p><img src="https://raw.githubusercontent.com/sing3r/image/main/hexoImage16286645101.png"></p>
 <h2 id="0x04-构造POP"><a href="#0x04-构造POP" class="headerlink" title="0x04-构造POP"></a>0x04-构造POP</h2><h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>/vendor/league/flysystem-cached-adapter/src/Storage/AbstractCache.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;autosave= false</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
