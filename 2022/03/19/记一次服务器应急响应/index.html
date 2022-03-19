@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="0x01 概述2021年5月26日早，突然收到同事通知，云平台某服务器A出现异常。表像为：A对其他主机进行漏洞扫描攻击。 0x02 事件处置获取基本信息访谈相关人员：  服务器IP&#x2F;域名地址：***.***.118.103，****.*****.***.cn； 服务器名称：培训考勤签到系统； 上线时间：2021年1月； 是否对互联网服务：是； 中间件：weblogic 12.1，前段时间">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次服务器应急响应">
+<meta property="og:url" content="http://example.com/2022/03/19/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="0x01 概述2021年5月26日早，突然收到同事通知，云平台某服务器A出现异常。表像为：A对其他主机进行漏洞扫描攻击。 0x02 事件处置获取基本信息访谈相关人员：  服务器IP&#x2F;域名地址：***.***.118.103，****.*****.***.cn； 服务器名称：培训考勤签到系统； 上线时间：2021年1月； 是否对互联网服务：是； 中间件：weblogic 12.1，前段时间">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-03-19T05:05:01.000Z">
+<meta property="article:modified_time" content="2022-03-19T05:24:01.088Z">
+<meta property="article:author" content="singsing">
+<meta property="article:tag" content="应急响应">
+<meta property="article:tag" content="非法入侵">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/03/19/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>记一次服务器应急响应 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/19/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记一次服务器应急响应
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-19 13:05:01 / Modified: 13:24:01" itemprop="dateCreated datePublished" datetime="2022-03-19T13:05:01+08:00">2022-03-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/" itemprop="url" rel="index"><span itemprop="name">应急响应</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="0x01-概述"><a href="#0x01-概述" class="headerlink" title="0x01 概述"></a>0x01 概述</h2><p>2021年5月26日早，突然收到同事通知，云平台某服务器A出现异常。表像为：A对其他主机进行漏洞扫描攻击。</p>
+<h2 id="0x02-事件处置"><a href="#0x02-事件处置" class="headerlink" title="0x02 事件处置"></a>0x02 事件处置</h2><h3 id="获取基本信息"><a href="#获取基本信息" class="headerlink" title="获取基本信息"></a>获取基本信息</h3><p><strong>访谈相关人员：</strong></p>
+<ol>
+<li>服务器IP&#x2F;域名地址：<code>***.***.118.103</code>，<code>****.*****.***.cn</code>；</li>
+<li>服务器名称：培训考勤签到系统；</li>
+<li>上线时间：2021年1月；</li>
+<li>是否对互联网服务：是；</li>
+<li>中间件：weblogic 12.1，前段时间排查过程发现存在漏洞，由于运维无法提供补丁，采取禁用 T3 及 IIOP 协议缓解部分漏洞，继续对外服务；</li>
+<li>何时出现异常现场：2021年5月26日；</li>
+<li>异常情况：对其他服务器进行扫描攻击；</li>
+<li>其他信息：采用 HTTPS 方式加密传输；内部负载均衡地址：<code>***.**.26.191</code>，端口：<code>443</code>；外部负载均衡地址：<code>***.**.26.10</code>，端口：<code>443</code>；服务器上线过程中存在不规范，安全人员不知情，服务器未加入 WAF 等安全设备进行保护 。</li>
+</ol>
+<h3 id="恶意文件查杀"><a href="#恶意文件查杀" class="headerlink" title="恶意文件查杀"></a>恶意文件查杀</h3><p>对服务器A进行恶意文件查杀，发现服务器是裸奔，临时下载火绒合D盾对服务器进行恶意文件识别（不建议使用火绒），火绒识别4个恶意文件，D盾识别6个恶意文件，文件创建事件均为5月25日。</p>
+<h3 id="流量分析平台记录分析"><a href="#流量分析平台记录分析" class="headerlink" title="流量分析平台记录分析"></a>流量分析平台记录分析</h3><p>翻查NGSOC关于 <code>***.***.118.103</code> 的WEB流量记录，只有零星几条，无法获取有效信息。</p>
+<p>翻查 access 日志尝试获取有用信息的时候，发现日志中有weblogic 的 CVE-2020-14882 攻击记录，payload 作用为反弹shell，根据 payload 的上的反弹地址发现一个攻击者IP，尝试在NGSOC上搜索该源 IP 地址，发现记录，其中该记录目的地址为： <code>***.**.26.10</code> 。访问管理员后发现互联网地址与 <code>***.***.118.103</code> 通讯，需经过内外负载均衡，外部负载均衡地址为： <code>***.**.26.10</code> 。</p>
+<p>查询关于外部负载均衡地址（ <code>***.**.26.10</code> ）的 WEB 流量记录，依然只有零星几条记录，陷入死局。过了一段时间，原来是忽略了服务器采用 HTTPS 加密协议传输，且未将证书私钥导入 <strong>NDS</strong> 内，所以无法通过 <code>FLOW_WEB</code> 表查询 WEB 流量记录，只能通过 <code>FLOW_SSL</code> 表查询 SS L加密协商流量，然而 SSL 加密流量的内容完全看不到，只能查询该段时间哪些 IP 访问过。</p>
+<p>通过 NGSOC 平台搜索语法筛选5月21-26日访问该应用系统的互联网地址，发现从25日凌晨开始有19个异常高频的访问记录，大多数为来自中国四川。</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>IP</th>
+<th>IP的物理位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>39.144.137.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>2</td>
+<td>39.144.137.**</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>3</td>
+<td>139.207.149.***</td>
+<td>四川省</td>
+</tr>
+<tr>
+<td>4</td>
+<td>81.69.33.***</td>
+<td>上海市</td>
+</tr>
+<tr>
+<td>5</td>
+<td>39.144.137.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>6</td>
+<td>171.210.45.***</td>
+<td>四川省</td>
+</tr>
+<tr>
+<td>7</td>
+<td>116.169.1.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>8</td>
+<td>125.34.74.**</td>
+<td>北京市</td>
+</tr>
+<tr>
+<td>9</td>
+<td>171.88.165.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>10</td>
+<td>171.221.43.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>11</td>
+<td>114.253.56.***</td>
+<td>北京市</td>
+</tr>
+<tr>
+<td>12</td>
+<td>117.136.32.***</td>
+<td>广州市</td>
+</tr>
+<tr>
+<td>13</td>
+<td>106.13.30.***</td>
+<td>广州市</td>
+</tr>
+<tr>
+<td>14</td>
+<td>165.227.136.***</td>
+<td>德国 黑森州 美因河畔法兰克福</td>
+</tr>
+<tr>
+<td>15</td>
+<td>222.212.129.***</td>
+<td>四川省 成都市</td>
+</tr>
+<tr>
+<td>16</td>
+<td>45.146.164.***</td>
+<td>俄罗斯 莫斯科州 莫斯科</td>
+</tr>
+<tr>
+<td>17</td>
+<td>45.147.197.***</td>
+<td>荷兰 海尔德兰省 杜廷赫姆</td>
+</tr>
+<tr>
+<td>18</td>
+<td>115.171.244.**</td>
+<td>北京市</td>
+</tr>
+<tr>
+<td>19</td>
+<td>198.20.69.**</td>
+<td>美国 亚利桑那州 菲尼克斯</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="文件分析"><a href="#文件分析" class="headerlink" title="文件分析"></a>文件分析</h3><p>结合恶意文件创建时间及 NGSOC流 量记录信息，判断攻击者开展攻击时间为2021年5月25日凌晨0时至2021年5月26日上午10点30分（服务器断网时间点）。为更全面发现服务器A存在的恶意文件，将2021年5月25日-26日新增的文件全部备份并开展人工分析。通过人工分析，从161个文件中发现27个恶意文件（含D盾及火绒识别出来的恶意文件），恶意文件类型包括：webshell(冰蝎木马)、流量代理文件、MS17-010 扫描工具、Windows密码提取工具（mimikatz.exe、procdump64.exe）、CS木马、主机扫描工具等。</p>
+<p>分析CS马过程中，发现反连域名及反连IP地址， <code>3ead0dfe.ns2.*****.site</code> 、 <code>3ead0dfe.ns2.*****.site</code> 、 <code>171.***.***.***</code> 。通过whois、搜索引擎结合域名信息查到攻击者QQ号，照片等个人信息。</p>
+<blockquote>
+<p>PS：自动化分析平台：</p>
+</blockquote>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://x.threatbook.cn/">https://x.threatbook.cn/</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.virustotal.com/">https://www.virustotal.com/</a></li>
+<li><a target="_blank" rel="noopener" href="https://app.any.run/">https://app.any.run/</a></li>
+</ol>
+<blockquote>
+<p>手动行为分析工具：火绒剑、promon</p>
+</blockquote>
+<h3 id="行为分析"><a href="#行为分析" class="headerlink" title="行为分析"></a>行为分析</h3><p>PcLog 查询系统操作，发现5月25日15点00分执行过CS木马“123321.exe” , 执行结果为失败，软件崩溃。此外，其他信息均为登陆记录。<br>RegRipper3.0 查询 Amcache，发现5月25日分别执行过 dns.exe、fscsn64.exe、123321.exe、amd.exe、mimikatz.exe。<br>RegistryExplorer 查询 UserAssist，未发现5月25日的信息。</p>
+<h2 id="0x03-分析结果"><a href="#0x03-分析结果" class="headerlink" title="0x03 分析结果"></a>0x03 分析结果</h2><p>access 日志记录信息不全（原因未知，HTTPS协议的关系？），流量记录分析平台的相关内容均是加密状态，无法查看。根据中间件情况（未安装的补丁的weblogic）及恶意文件的存放的路径，推断攻击者通过weblogic反序列化漏洞入侵。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/" rel="tag"># 应急响应</a>
+              <a href="/tags/%E9%9D%9E%E6%B3%95%E5%85%A5%E4%BE%B5/" rel="tag"># 非法入侵</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/19/%E6%9F%90CDN-SQLi%E6%B3%A8%E5%85%A5Bypass/" rel="prev" title="某CDN SQLi注入Bypass">
+      <i class="fa fa-chevron-left"></i> 某CDN SQLi注入Bypass
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">0x01 概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">0x02 事件处置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF"><span class="nav-number">2.1.</span> <span class="nav-text">获取基本信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%81%B6%E6%84%8F%E6%96%87%E4%BB%B6%E6%9F%A5%E6%9D%80"><span class="nav-number">2.2.</span> <span class="nav-text">恶意文件查杀</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E9%87%8F%E5%88%86%E6%9E%90%E5%B9%B3%E5%8F%B0%E8%AE%B0%E5%BD%95%E5%88%86%E6%9E%90"><span class="nav-number">2.3.</span> <span class="nav-text">流量分析平台记录分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E5%88%86%E6%9E%90"><span class="nav-number">2.4.</span> <span class="nav-text">文件分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%8C%E4%B8%BA%E5%88%86%E6%9E%90"><span class="nav-number">2.5.</span> <span class="nav-text">行为分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E5%88%86%E6%9E%90%E7%BB%93%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text">0x03 分析结果</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : 'd99b7f5914e283d33110c6362428a591',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
