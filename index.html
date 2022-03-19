@@ -213,7 +213,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:20:12" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
+              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:24:21" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -242,7 +242,7 @@
 <li>&#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes</li>
 <li>systemctl restart sshd.service，重启ssh服务</li>
 </ol>
-<h3 id="内网电脑"><a href="#内网电脑" class="headerlink" title="内网电脑"></a>内网电脑</h3><p><strong>简单建立ssh反向隧道。</strong> 执行命令：<code>ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网主机需要转发到VPS的端口&gt; root@&lt;VPS地址&gt; -o ServerAliveInterval=300</code>。例如：<code>ssh -ngfNTR 80:127.0..0.1:22 root@150.158.xx.xx -o ServerAliveInterval=300</code></p>
+<h3 id="内网电脑"><a href="#内网电脑" class="headerlink" title="内网电脑"></a>内网电脑</h3><p><strong>简单建立ssh反向隧道</strong> <br>执行命令：<code>ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网主机需要转发到VPS的端口&gt; root@&lt;VPS地址&gt; -o ServerAliveInterval=300</code>。例如：<code>ssh -ngfNTR 80:127.0..0.1:22 root@150.158.xx.xx -o ServerAliveInterval=300</code></p>
 <ul>
 <li>-f 表示后台执行</li>
 <li>-N 表示不执行任何命令</li>
@@ -255,7 +255,7 @@
 <li>-T Disable pseudo-tty allocation. 不占用 shell . </li>
 <li>-g Allows remote hosts to connect to local forwarded ports.</li>
 </ul>
-<p><strong>持久建立ssh反向隧道-1。</strong> </p>
+<p><strong>持久建立ssh反向隧道-1</strong> </p>
 <ol>
 <li>安装autossh；</li>
 <li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.xx.xx -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
