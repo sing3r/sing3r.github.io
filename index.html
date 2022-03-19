@@ -213,7 +213,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:17:34" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
+              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:20:12" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -236,7 +236,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式<br>s</p>
+          <h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式</p>
 <h2 id="场景示例"><a href="#场景示例" class="headerlink" title="场景示例"></a>场景示例</h2><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png"></p>
 <h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><h3 id="VPS"><a href="#VPS" class="headerlink" title="VPS"></a>VPS</h3><ol>
 <li>&#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes</li>
@@ -258,7 +258,7 @@
 <p><strong>持久建立ssh反向隧道-1。</strong> </p>
 <ol>
 <li>安装autossh；</li>
-<li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
+<li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.xx.xx -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
 <li>新建开机自启动服务文件 <code>/usr/lib/systemd/system/autosshd.service</code>：<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Auto SSH Tunnel</span><br><span class="line">After=network-online.target</span><br><span class="line">StartLimitInterval=10</span><br><span class="line">[Service]</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">User=root</span></span><br><span class="line">Type=simple</span><br><span class="line">ExecStart=/bin/bash /opt/sshPortMapping.sh</span><br><span class="line">ExecReload=/bin/kill -HUP $MAINPID</span><br><span class="line">KillMode=process</span><br><span class="line">Restart=always</span><br><span class="line">RestartSec=5</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=graphical.target</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=default.target</span></span><br></pre></td></tr></table></figure></li>
 <li>设置为开机自启动服务：<code>systemctl enable autosshd.service</code></li>
 <li>启动服务：<code>systemctl start autosshd </code></li>
