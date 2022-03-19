@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2022/03/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>ThinkPHP反序列化漏洞&amp;#x2d;1</title>
     <url>/2022/03/18/ThinkPHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/</url>
     <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><p>详见前文</p>
@@ -68,6 +50,24 @@
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2022/03/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>暴力破解之前端AES加密</title>
     <url>/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/</url>
     <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
@@ -83,6 +83,52 @@
         <tag>WEB安全</tag>
         <tag>暴力破解</tag>
         <tag>AES</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>内网穿透之ssh反向隧道</title>
+    <url>/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/</url>
+    <content><![CDATA[<h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式<br>s</p>
+<h2 id="场景示例"><a href="#场景示例" class="headerlink" title="场景示例"></a>场景示例</h2><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png"></p>
+<h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><h3 id="VPS"><a href="#VPS" class="headerlink" title="VPS"></a>VPS</h3><ol>
+<li>&#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes</li>
+<li>systemctl restart sshd.service，重启ssh服务</li>
+</ol>
+<h3 id="内网电脑"><a href="#内网电脑" class="headerlink" title="内网电脑"></a>内网电脑</h3><p><strong>简单建立ssh反向隧道。</strong> 执行命令：<code>ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网主机需要转发到VPS的端口&gt; root@&lt;VPS地址&gt; -o ServerAliveInterval=300</code>。例如：<code>ssh -ngfNTR 80:127.0..0.1:22 root@150.158.xx.xx -o ServerAliveInterval=300</code></p>
+<ul>
+<li>-f 表示后台执行</li>
+<li>-N 表示不执行任何命令</li>
+<li>-R 建立反向隧道</li>
+<li>1222 A机用来外面ssh的监听端口</li>
+<li>-o ServerAliveInterval&#x3D;300 的意思是让ssh client每300秒就给server发个心跳,以免链路被RST. </li>
+<li>-f Requests ssh to go to background just before command execution. 让该命令后台运行 . </li>
+<li>-n Redirects stdin from &#x2F;dev&#x2F;null (actually, prevents reading from stdin). </li>
+<li>-N Do not execute a remote command. 不执行远程命令 . </li>
+<li>-T Disable pseudo-tty allocation. 不占用 shell . </li>
+<li>-g Allows remote hosts to connect to local forwarded ports.</li>
+</ul>
+<p><strong>持久建立ssh反向隧道-1。</strong> </p>
+<ol>
+<li>安装autossh；</li>
+<li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
+<li>新建开机自启动服务文件 <code>/usr/lib/systemd/system/autosshd.service</code>：<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Auto SSH Tunnel</span><br><span class="line">After=network-online.target</span><br><span class="line">StartLimitInterval=10</span><br><span class="line">[Service]</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">User=root</span></span><br><span class="line">Type=simple</span><br><span class="line">ExecStart=/bin/bash /opt/sshPortMapping.sh</span><br><span class="line">ExecReload=/bin/kill -HUP $MAINPID</span><br><span class="line">KillMode=process</span><br><span class="line">Restart=always</span><br><span class="line">RestartSec=5</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=graphical.target</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=default.target</span></span><br></pre></td></tr></table></figure></li>
+<li>设置为开机自启动服务：<code>systemctl enable autosshd.service</code></li>
+<li>启动服务：<code>systemctl start autosshd </code></li>
+</ol>
+<blockquote>
+<p><strong>PS：</strong> 因为autossh需要交互输入vps的密码，存在不便。所以使用证书登陆，autossh通过-i指定证书文件进行免密登陆，所以“持久建立ssh反向隧道”还需要在内网主机生成证书，并将公钥上传vps。<br>   6. 至此，其他机器就可以<code>ssh root@150.158.84.84 -p 80</code>访问内网主机。 </p>
+</blockquote>
+<p><strong>持久建立ssh反向隧道-2</strong></p>
+<p>将<code>/opt/sshPortMapping.sh</code>代码替换为以下，其余同“持久建立ssh反向隧道-1”操作一样：<br><code>autossh -M 7890 -fN -o &quot;PubkeyAuthentication=yes&quot; -o &quot;StrictHostKeyChecking=false&quot; -o &quot;PasswordAuthentication=no&quot; -o &quot;ServerAliveInterval 60&quot; -o &quot;ServerAliveCountMax 3&quot; -R 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</code></p>
+<h2 id="基于ssh反向隧道建立socket代理"><a href="#基于ssh反向隧道建立socket代理" class="headerlink" title="基于ssh反向隧道建立socket代理"></a>基于ssh反向隧道建立socket代理</h2><p>通过上面的设置已经可以访问内网主机的ssh端口，基于以上，在其他client主机上执行以下命令：<code>ssh -N -D 127.0.0.1:9999 root@150.158.xx.xx -p 80</code>。接下来就可以将浏览器浏代理设置为<code>socket//127.0.0.1:9999</code>，将内网主机将作为代理服务器。</p>
+<h2 id="踩坑"><a href="#踩坑" class="headerlink" title="踩坑"></a>踩坑</h2><ol>
+<li>测试中，非root用户无法无法建立转发，原因未明。</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>内网穿透</tag>
+        <tag>ssh</tag>
+        <tag>代理</tag>
       </tags>
   </entry>
   <entry>
