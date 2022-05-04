@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题前言最近看到一道题 – GWCTF 2019，其中涉及 PHP mt_rand 函数安全问题以及相关攻击工具 php_mt_seed4.0 的使用，遂有本文记录。 PHP mt_rand 函数简介PHP的mt_rand函数作为一个随机数生成工具在程序中被广泛使用，该函数用了 Mersenne Twister 算法的特性作为随">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题">
+<meta property="og:url" content="http://example.com/2022/05/04/GWCTF-2019-WriteUP-%E5%8F%8A-PHP-mt-rand-%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题前言最近看到一道题 – GWCTF 2019，其中涉及 PHP mt_rand 函数安全问题以及相关攻击工具 php_mt_seed4.0 的使用，遂有本文记录。 PHP mt_rand 函数简介PHP的mt_rand函数作为一个随机数生成工具在程序中被广泛使用，该函数用了 Mersenne Twister 算法的特性作为随">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-05-04T04:02:18.000Z">
+<meta property="article:modified_time" content="2022-05-04T04:03:28.440Z">
+<meta property="article:author" content="singsing">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/05/04/GWCTF-2019-WriteUP-%E5%8F%8A-PHP-mt-rand-%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/04/GWCTF-2019-WriteUP-%E5%8F%8A-PHP-mt-rand-%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-05-04 12:02:18 / Modified: 12:03:28" itemprop="dateCreated datePublished" datetime="2022-05-04T12:02:18+08:00">2022-05-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="GWCTF-2019-WriteUP-及-PHP-mt-rand-安全问题"><a href="#GWCTF-2019-WriteUP-及-PHP-mt-rand-安全问题" class="headerlink" title="GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题"></a>GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近看到一道题 – GWCTF 2019，其中涉及 PHP mt_rand 函数安全问题以及相关攻击工具 php_mt_seed4.0 的使用，遂有本文记录。</p>
+<h2 id="PHP-mt-rand-函数简介"><a href="#PHP-mt-rand-函数简介" class="headerlink" title="PHP mt_rand 函数简介"></a>PHP mt_rand 函数简介</h2><p>PHP的mt_rand函数作为一个随机数生成工具在程序中被广泛使用，该函数用了 Mersenne Twister 算法的特性作为随机数发生器，它产生随机数值的平均速度比 libc 提供的 rand() 快四倍。mt_rand函数有两个可选参数 min 和 max，如果没有提供可选参数，mt_rand函数将返回返回 0 到 mt_getrandmax() 之间的伪随机数。例如想要 5 到 15（包括 5 和 15）之间的随机数，用 mt_rand(5, 15)。</p>
+<p>常用的使用方式如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">mt_rand</span>() . <span class="string">&quot;\n&quot;</span>;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">mt_rand</span>() . <span class="string">&quot;\n&quot;</span>;</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">mt_rand</span>(<span class="number">5</span>, <span class="number">15</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>以上程序的输出结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1604716014</span><br><span class="line">1478613278</span><br><span class="line">6</span><br></pre></td></tr></table></figure>
+
+<h2 id="伪随机数"><a href="#伪随机数" class="headerlink" title="伪随机数"></a>伪随机数</h2><p>伪随机数是用确定性的算法计算出来的随机数序列，它并不真正的随机，但具有类似于随机数的统计特征，如均匀性、独立性等。在计算伪随机数时，若使用的初值（种子）不变，那么伪随机数的数序也不变。伪随机数可以用计算机大量生成，在模拟研究中为了提高模拟效率，一般采用伪随机数代替真正的随机数。模拟中使用的一般是循环周期极长并能通过随机数检验的伪随机数，以保证计算结果的随机性。伪随机数的生成方法有线性同余法、单向散列函数法、密码法等。</p>
+<h2 id="PHP-mt-rand-引起的安全问题"><a href="#PHP-mt-rand-引起的安全问题" class="headerlink" title="PHP mt_rand 引起的安全问题"></a>PHP mt_rand 引起的安全问题</h2><p>mt_rand就是一个伪随机数生成函数，它由可确定的函数，通过一个种子产生的伪随机数。这意味着：如果知道了种子，或者已经产生的随机数，都可能获得接下来随机数序列的信息（可预测性）。<br>每次调用 mt_rand() 都会先检查是否已经播种。如果已经播种就直接产生随机数，否则调用 php_mt_srand 来播种。也就是说每个 php cgi 进程期间，只有第一次调用 mt_rand() 会自动播种。接下来都会根据这个第一次播种的种子来生成随机数。</p>
+<h2 id="php-mt-seed-简介及使用说明"><a href="#php-mt-seed-简介及使用说明" class="headerlink" title="php_mt_seed 简介及使用说明"></a>php_mt_seed 简介及使用说明</h2><p>php_mt_seed 是一个破解 mt_rand 函数 seed 的工具，在最简单的调用模式下，它能通过 mt_rand 第一次输出的值寻找 mt_rand 的 seed，在更高级的模式中它能匹配不是第一次输出的和不明确具体输出的情况。</p>
+<p>mt_rand 的算法从 PHP 3.0.6 开始就一直在变化，php_mt_seed 4.0 支持以下几个大的版本： PHP 3.0.7 to 5.2.0，PHP 5.2.1 to 7.0.x， and PHP 7.1.0+</p>
+<p>php_mt_seed 基于命令行运行，命令行可以使用 1，2，4 或者更多的参数。这些参数需要详细说明 mt_rand() 的输出。</p>
+<p><strong>一个参数</strong><br>当只有一个参数的时候，这个参数代表 mt_rand 第一次输出的值。</p>
+<p><strong>两个参数</strong><br>当有两个参数的时候，他们代表 mt_rand 第一次输出应该位于什么区间内。<br>第一个参数为最小值，第二个参数为最大值。</p>
+<p><strong>四个参数（高级模式）</strong><br>前两个参数表示 mt_rand 第一次输出的区间，后两个参数表示 mt_rand输出的区间。</p>
+<p><strong>多于五个参数（高级模式）</strong><br>每四个参数一组，但是最后一组可以是1，2或4个参数。每一组引用对应的输出。</p>
+<h2 id="GWCTF-2019"><a href="#GWCTF-2019" class="headerlink" title="GWCTF 2019"></a>GWCTF 2019</h2><ul>
+<li><strong>check.php</strong><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="comment">#这不是抽奖程序的源代码！不许看！</span></span><br><span class="line"><span class="title function_ invoke__">header</span>(<span class="string">&quot;Content-Type: text/html;charset=utf-8&quot;</span>);</span><br><span class="line"><span class="title function_ invoke__">session_start</span>();</span><br><span class="line"><span class="keyword">if</span>(!<span class="keyword">isset</span>(<span class="variable">$_SESSION</span>[<span class="string">&#x27;seed&#x27;</span>]))&#123;</span><br><span class="line"><span class="variable">$_SESSION</span>[<span class="string">&#x27;seed&#x27;</span>]=<span class="title function_ invoke__">rand</span>(<span class="number">0</span>,<span class="number">999999999</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">mt_srand</span>(<span class="variable">$_SESSION</span>[<span class="string">&#x27;seed&#x27;</span>]);</span><br><span class="line"><span class="variable">$str_long1</span> = <span class="string">&quot;abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>;</span><br><span class="line"><span class="variable">$str</span>=<span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="variable">$len1</span>=<span class="number">20</span>;</span><br><span class="line"><span class="keyword">for</span> ( <span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="variable">$len1</span>; <span class="variable">$i</span>++ )&#123;</span><br><span class="line">    <span class="variable">$str</span>.=<span class="title function_ invoke__">substr</span>(<span class="variable">$str_long1</span>, <span class="title function_ invoke__">mt_rand</span>(<span class="number">0</span>, <span class="title function_ invoke__">strlen</span>(<span class="variable">$str_long1</span>) - <span class="number">1</span>), <span class="number">1</span>);       </span><br><span class="line">&#125;</span><br><span class="line"><span class="variable">$str_show</span> = <span class="title function_ invoke__">substr</span>(<span class="variable">$str</span>, <span class="number">0</span>, <span class="number">10</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;p id=&#x27;p1&#x27;&gt;&quot;</span>.<span class="variable">$str_show</span>.<span class="string">&quot;&lt;/p&gt;&quot;</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;num&#x27;</span>]))&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;num&#x27;</span>]===<span class="variable">$str</span>)&#123;x</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;p id=flag&gt;抽奖，就是那么枯燥且无味，给你flag&#123;xxxxxxxxx&#125;&lt;/p&gt;&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;p id=flag&gt;没抽中哦，再试试吧&lt;/p&gt;&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;check.php&quot;</span>);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="使用php-mt-seed4-0工具爆破seed"><a href="#使用php-mt-seed4-0工具爆破seed" class="headerlink" title="使用php_mt_seed4.0工具爆破seed"></a>使用php_mt_seed4.0工具爆破seed</h3><h4 id="生成-php-mt-seed4-0-所需要的参数"><a href="#生成-php-mt-seed4-0-所需要的参数" class="headerlink" title="生成 php_mt_seed4.0 所需要的参数"></a>生成 php_mt_seed4.0 所需要的参数</h4><p>check.php 中 <code>$str</code> 由 <code>substr($str_long1, mt_rand(0, strlen($str_long1) - 1), 1)</code> 执行 20 次，将 20 次的结果相加所得。根据题意第一次生成字符为c，即 <code>mt_rand(0, strlen($str_long1) - 1)</code> &#x3D; <code>2</code>。通过以下程序，找出每次执行 <code>mt_rand(0, strlen($str_long1) - 1)</code> 生成的结果。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line">s = <span class="string">&#x27;abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&#x27;</span></span><br><span class="line">key = <span class="string">&#x27;c1z5DuPZXT&#x27;</span></span><br><span class="line">m = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> key:</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(s)):</span><br><span class="line">        <span class="keyword">if</span> i == s[j]:</span><br><span class="line">            m += <span class="string">&quot;&#123;&#125; &#123;&#125; 0 &#123;&#125; &quot;</span>.<span class="built_in">format</span>(j,j,<span class="built_in">len</span>(s)-<span class="number">1</span>)</span><br><span class="line"><span class="built_in">print</span>(m)</span><br><span class="line"><span class="comment">#2 2 0 61 27 27 0 61 25 25 0 61 31 31 0 61 39 39 0 61 20 20 0 61 51 51 0 61 61 61 0 61 59 59 0 61 55 55 0 61 </span></span><br></pre></td></tr></table></figure>
+
+<h4 id="生成题目要求的字符串"><a href="#生成题目要求的字符串" class="headerlink" title="生成题目要求的字符串"></a>生成题目要求的字符串</h4><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="comment">#version:php7.3.4</span></span><br><span class="line"><span class="title function_ invoke__">mt_srand</span>(<span class="number">744449933</span>);</span><br><span class="line"><span class="variable">$str_long1</span> = <span class="string">&quot;abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>;</span><br><span class="line"><span class="variable">$str</span>=<span class="string">&#x27;&#x27;</span>;</span><br><span class="line"><span class="variable">$len1</span>=<span class="number">20</span>;</span><br><span class="line"><span class="keyword">for</span> ( <span class="variable">$i</span> = <span class="number">0</span>; <span class="variable">$i</span> &lt; <span class="variable">$len1</span>; <span class="variable">$i</span>++ )&#123;</span><br><span class="line">    <span class="variable">$str</span>.=<span class="title function_ invoke__">substr</span>(<span class="variable">$str_long1</span>, <span class="title function_ invoke__">mt_rand</span>(<span class="number">0</span>, <span class="title function_ invoke__">strlen</span>(<span class="variable">$str_long1</span>) - <span class="number">1</span>), <span class="number">1</span>);       </span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">echo</span> <span class="variable">$str</span>;</span><br><span class="line"><span class="comment">#c1z5DuPZXTSDNU66xXTU</span></span><br></pre></td></tr></table></figure>
+<p>将该字符串提交即可得到flag</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_41628669/article/details/106133105">https://blog.csdn.net/qq_41628669/article/details/106133105</a><br><a target="_blank" rel="noopener" href="https://www.freebuf.com/vuls/192012.html">https://www.freebuf.com/vuls/192012.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/05/04/CISCN2019-%E5%8D%8E%E5%8C%97%E8%B5%9B%E5%8C%BA-Day1-Web1-Dropbox/" rel="prev" title="CISCN2019 华北赛区 Day1  Web1 Dropbox">
+      <i class="fa fa-chevron-left"></i> CISCN2019 华北赛区 Day1  Web1 Dropbox
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#GWCTF-2019-WriteUP-%E5%8F%8A-PHP-mt-rand-%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PHP-mt-rand-%E5%87%BD%E6%95%B0%E7%AE%80%E4%BB%8B"><span class="nav-number">1.2.</span> <span class="nav-text">PHP mt_rand 函数简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%AA%E9%9A%8F%E6%9C%BA%E6%95%B0"><span class="nav-number">1.3.</span> <span class="nav-text">伪随机数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PHP-mt-rand-%E5%BC%95%E8%B5%B7%E7%9A%84%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="nav-number">1.4.</span> <span class="nav-text">PHP mt_rand 引起的安全问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#php-mt-seed-%E7%AE%80%E4%BB%8B%E5%8F%8A%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E"><span class="nav-number">1.5.</span> <span class="nav-text">php_mt_seed 简介及使用说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GWCTF-2019"><span class="nav-number">1.6.</span> <span class="nav-text">GWCTF 2019</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8php-mt-seed4-0%E5%B7%A5%E5%85%B7%E7%88%86%E7%A0%B4seed"><span class="nav-number">1.6.1.</span> <span class="nav-text">使用php_mt_seed4.0工具爆破seed</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%9F%E6%88%90-php-mt-seed4-0-%E6%89%80%E9%9C%80%E8%A6%81%E7%9A%84%E5%8F%82%E6%95%B0"><span class="nav-number">1.6.1.1.</span> <span class="nav-text">生成 php_mt_seed4.0 所需要的参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E9%A2%98%E7%9B%AE%E8%A6%81%E6%B1%82%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-number">1.6.1.2.</span> <span class="nav-text">生成题目要求的字符串</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.7.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : '6dce00f746887b9853efbc19bc9026ba',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
