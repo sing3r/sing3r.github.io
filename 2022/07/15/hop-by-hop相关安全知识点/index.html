@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="hop-by-hop 标头相关知识乜叉係 hop-by-hop？先解释下这是什么东西。根据 RFC 2612，HTTP&#x2F;1.1 规范默认将以下标头视为 hop-by-hop ：Keep-Alive、Transfer-Encoding、TE、Connection、Trailer、Upgrade、Proxy-Authorization 和 Proxy-Authenticate。当在请求中遇到">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hop-by-hop相关安全知识点">
+<meta property="og:url" content="http://example.com/2022/07/15/hop-by-hop%E7%9B%B8%E5%85%B3%E5%AE%89%E5%85%A8%E7%9F%A5%E8%AF%86%E7%82%B9/index.html">
+<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:description" content="hop-by-hop 标头相关知识乜叉係 hop-by-hop？先解释下这是什么东西。根据 RFC 2612，HTTP&#x2F;1.1 规范默认将以下标头视为 hop-by-hop ：Keep-Alive、Transfer-Encoding、TE、Connection、Trailer、Upgrade、Proxy-Authorization 和 Proxy-Authenticate。当在请求中遇到">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nathandavison.com/user/pages/01.blog/abusing-http-hop-by-hop-request-headers/hbh-theory-diagram.PNG">
+<meta property="og:image" content="https://images.seebug.org/content/images/2022/05/26/1653550381000-20kgbov.png-w331s">
+<meta property="article:published_time" content="2022-07-15T14:57:09.000Z">
+<meta property="article:modified_time" content="2022-07-15T14:59:56.749Z">
+<meta property="article:author" content="singsing">
+<meta property="article:tag" content="渗透测试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nathandavison.com/user/pages/01.blog/abusing-http-hop-by-hop-request-headers/hbh-theory-diagram.PNG">
+
+<link rel="canonical" href="http://example.com/2022/07/15/hop-by-hop%E7%9B%B8%E5%85%B3%E5%AE%89%E5%85%A8%E7%9F%A5%E8%AF%86%E7%82%B9/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>hop-by-hop相关安全知识点 | singsing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">singsing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/07/15/hop-by-hop%E7%9B%B8%E5%85%B3%E5%AE%89%E5%85%A8%E7%9F%A5%E8%AF%86%E7%82%B9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="singsing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="singsing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          hop-by-hop相关安全知识点
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-07-15 22:57:09 / Modified: 22:59:56" itemprop="dateCreated datePublished" datetime="2022-07-15T22:57:09+08:00">2022-07-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hop-by-hop/" itemprop="url" rel="index"><span itemprop="name">hop-by-hop</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="hop-by-hop-标头相关知识"><a href="#hop-by-hop-标头相关知识" class="headerlink" title="hop-by-hop 标头相关知识"></a>hop-by-hop 标头相关知识</h1><h2 id="乜叉係-hop-by-hop？"><a href="#乜叉係-hop-by-hop？" class="headerlink" title="乜叉係 hop-by-hop？"></a>乜叉係 hop-by-hop？</h2><p>先解释下这是什么东西。根据 <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1">RFC 2612</a>，HTTP&#x2F;1.1 规范默认将以下标头视为 hop-by-hop ：<code>Keep-Alive</code>、<code>Transfer-Encoding</code>、<code>TE</code>、<code>Connection</code>、<code>Trailer</code>、<code>Upgrade</code>、<code>Proxy-Authorization</code> 和 <code>Proxy-Authenticate</code>。当在请求中遇到这些标头时，代理服务器会处理这些标头，并且不会将其转发到下一个节点。<br>除了这些默认值之外，请求还可以定义一组自定义的标头，<a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-14.10">通过将它们添加到 <code>Connection</code> 标头中被视为 hop-by-hop 处理</a>，如下所示：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Connection：close, X-Foo, X-Bar</span><br></pre></td></tr></table></figure>
+<p>上面代码表示，我们要求代理服务器将 <code>X-Foo</code> 和 <code>X-Bar</code> 视为 hop-by-hop，这表明我们希望代理在转发请求到下一跳之前将 <code>X-Foo</code> 和 <code>X-Bar</code> 从请求中删除。</p>
+<h2 id="关于滥用-hop-by-hop-header-的一些理论"><a href="#关于滥用-hop-by-hop-header-的一些理论" class="headerlink" title="关于滥用 hop-by-hop header 的一些理论"></a>关于滥用 hop-by-hop header 的一些理论</h2><p>直接删除某些 <code>header</code> ，不一定会导致问题，但要是能够删除原始请求中不存在的，由前端或 HTTP 请求流程链中的另一个代理添加的 <code>header</code> 可能会造成不可预测的结果。<br>例如，在一条 HTTP 请求链中，某个代理服务器可能会在请求包中插入了一个 <code>hearder</code> ，该 <code>header</code> 可能涉及到后端访问控制策略或者描述 <code>internet</code> 用户的真实地址，缺失该 <code>hearder</code> 会导致应用程序处理逻辑出错，从而输出大量的调试错误信息。当某个前端代理存在转发 <code>hop-by-hop header</code> 列表行为，而不是按到规定处理 <code>hop-by-hop header</code> 的时候就可能会产生问题，因为它添加到请求中的任何 <code>header</code> 都可能被 <code>next hop</code> 删除。<br>上面知识已经提及到，<code>Connection</code> 头本身是一个 <code>hop-by-hop</code> 头。这就意味着一个合符规范的代理服务器在转发请求时，应按照 <code>Connection</code> 头中的自定义<code>hop-by-hop</code> 头列表，删除相应的请求头，而不应将请求包中的自定义<code>hop-by-hop</code> 头列表通过 <code>Connection</code> 头转发给下一个服务器中。然而，研究表明，这可能并不总是像预期的那样发生，一些系统似乎也转发整个 <code>Connection</code> 头，或者复制 <code>hop-by-hop</code> 列表并将其附加到自己的 <code>Connection</code> 头中。</p>
+<p>下面的图表显示了 <code>hop-by-hop</code> 标头可能会造成的问题，如果后端期望 <code>X-Important-Header</code> 并将其纳入到逻辑决策中<br><img src="https://nathandavison.com/user/pages/01.blog/abusing-http-hop-by-hop-request-headers/hbh-theory-diagram.PNG" alt="img1"></p>
+<p>下面介绍遇到的滥用逐跳报头的例子，以及在哪里可以发现影响的一些想法，但潜在的结果将非常具体的应用程序和基础设施的目标，以及报头的目标和它们对后端意味着什么。</p>
+<h2 id="如何发现系统中是否存在-hop-by-hop-header"><a href="#如何发现系统中是否存在-hop-by-hop-header" class="headerlink" title="如何发现系统中是否存在 hop-by-hop header"></a>如何发现系统中是否存在 hop-by-hop header</h2><p>~~ 我们可以很容易测试一个系统是否受到某种逐跳头部攻击影响。一个请求头出现和不出现时，会在响应中产生明显的差异，例如 Cookie。我们可以将一个这样的请求头，作为 <code>hop-by-hop</code> 头添加到 <code>Connection</code> 头中。如果请求链中的某个代理行为符合规范，会删除 <code>hop-by-hop</code> 头，那么当该请求头同时出现在请求中以及 <code>Connection</code> 消息头中列出时，响应应该与它根本不出现在请求中相同，但与它出现在请求中且不作为逐跳消息头列出时不同。~~</p>
+<p>众所周知，Cookie 作为认证手段，携带 Cookie 访问与不携带 Cookie 访问某个业务接口，服务器响应内容可能具有明显差异。假设用户经过认证后的 Cookie 为 <code>Cookie: session=admin</code>，访问 <code>api/me</code> 服务器返回 <code>HTTP 200</code> 。未经认证访问 <code>api/me</code> ，则返回 <code>HTTP 302</code>。通过 Cookie 测试系统中是否存在 hop-by-hop 流程如下：</p>
+<ul>
+<li><p>认证后访问，返回 <code>HTTP 200</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/api/me</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>foo.bar</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>session=admin</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>未认证访问，返回 <code>HTTP 302</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/api/me</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>foo.bar</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>系统中存在合规的代理，代理按照规范删除 Cookie 请求头，相当于未认证访问，返回 <code>HTTP 302</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/api/me</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>foo.bar</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>session=admin</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close, Cookie</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>通常，我们是用自动化工具进行测试，例如 burpsuite 的 intruder 功能进行测试，传入一些<a target="_blank" rel="noopener" href="https://github.com/danielmiessler/SecLists/tree/master/Discovery/Web-Content/BurpSuite-ParamMiner"><strong>请求头字典</strong></a>进行测试。</p>
+<h2 id="通过隐藏-X-Forwarded-For-来屏蔽原始-IP-地址"><a href="#通过隐藏-X-Forwarded-For-来屏蔽原始-IP-地址" class="headerlink" title="通过隐藏 X-Forwarded-For 来屏蔽原始 IP 地址"></a>通过隐藏 X-Forwarded-For 来屏蔽原始 IP 地址</h2><p>假设一个场景：前端代理接收用户请求，会将用户真实 IP 地址添加到 <code>X-Forwarded-For</code>(XFF) 请求头中，后端的基础设施和应用程序基于 XFF 头可以知道请求用户的真实 IP 地址。但如果系统中一个的代理符合规范，我们将会将 <code>X-Forwarded-For</code> 作为自定义 hop-by-hop 头的时候（Just like that：<code>Connection: close, X-Forwarded-For</code>），那么后端将不会接收到用户真实IP地址（<em>可能是接收不到 XFF 头,或者接收到了 XFF 头，但XFF 值为前端代理的 IP 地址,例如：CloudFoundry 中的 gorouter,在 CloudFoundry中的 gorouter 将请求转发到后端应用程序之前，如果请求中尚不存在 XFF 头 ，则会将其之前设备的 IP 地址设置为 XFF头值</em>）。所以，通过上面的方式我们就可以隐藏 XFF 头。<br>说了这么多，仅仅是隐藏真实 IP 地址，好似冇乜撚用，不过如果系统中存在以下情况的话，就可能触发另一种漏洞 – 影响后端关于访问控制策略的判断，从而造成非法访问。场景如下：</p>
+<ol>
+<li>应用系统组成如下：<em><strong>代理A(IP:10.1.10.1)</strong></em> –&gt; <em><strong>代理B(IP:10.1.10.2)</strong></em> –&gt; <em><strong>后端应用系统C(IP:10.1.10.3)</strong></em> 。</li>
+<li>关于 <em><strong>后端应用系统C(IP:10.1.10.3)</strong></em> 的 <code>/admin</code> 拥有了如下的访问控制逻辑，当遇到访问 IP 为 <code>10.1.10.0/24</code> 的时候，直接 Bypass。</li>
+<li><em><strong>代理A(IP:10.1.10.1)</strong></em> 会自动添加 XFF 头，用以描述用户真实IP，即使尝试传统的 <code>X-Forwarded-For</code> 欺骗，<em><strong>代理A(IP:10.1.10.1)</strong></em> 仍然会将真实的原始 IP 附加到标头，这样看起来像 <code>X-Forwarded-For: &lt;attacker spoofed ip&gt;, &lt;real attacker ip&gt;</code>，因此该应用程序可以安全地处理欺骗尝试。同时 <em><strong>代理A</strong></em> 只会完全转发 hop-by-hop 头列表，而不对其进行任何处理。</li>
+<li>符合规范的 <em><strong>代理B(IP:10.1.10.2)</strong></em> 接收到 <em><strong>代理A(IP:10.1.10.1)</strong></em> 的请求包后，对 hop-by-hop 头列表进行处理。</li>
+<li><em><strong>后端应用系统C(IP:10.1.10.3)</strong></em> 接收到 <em><strong>代理B</strong></em> 转发的请求包，发现没有 XFF 头后，自动为请求包添加 XFF 头，XFF 值为 <em><strong>代理B</strong></em> 的 IP地址。</li>
+</ol>
+<p>所以，问题显而易见，当攻击者发送一个如下的 hop-by-hop 头：<code>Connection: close, X-Forwarded-For</code> 的时候。<em><strong>代理B</strong></em> 将删除请求头中的 <code>X-Forwarded-For</code> 头，结合上述第五点，攻击者即可直接访问 <code>/admin</code> 。类似的案例有：<a target="_blank" rel="noopener" href="https://github.com/ritsec/RITSEC-CTF-2019/tree/master/Web/hop-by-hop">RITSEC-CTF-2019-hop-by-hop</a> </p>
+<p><img src="https://images.seebug.org/content/images/2022/05/26/1653550381000-20kgbov.png-w331s" alt="img"></p>
+<p>在verify函数中尝试获取 XFF 头，如果获取不到则默认为 direct。而前置服务为 apache，根据逐跳原则，当Connection 中加了其他标头 X-Forwarded-For，那么在 apache 转发给下一跳时，会移除 X-Forwarded-For 头，导致在 verify 函数中 request.headers[‘X-Forwarded-For’] 抛出异常，由此拿到 flag。</p>
+<h2 id="指纹服务"><a href="#指纹服务" class="headerlink" title="指纹服务"></a>指纹服务</h2><p>使用该技术删除一些请求头，可能会触发错误报告，根据特定的报告信息，可作为指纹识别使用。</p>
+<h2 id="关于-Abusing-HTTP-hop-by-hop-request-headers-一文中-SSRF-的说明"><a href="#关于-Abusing-HTTP-hop-by-hop-request-headers-一文中-SSRF-的说明" class="headerlink" title="关于 Abusing HTTP hop-by-hop request headers 一文中 SSRF 的说明"></a>关于 <a target="_blank" rel="noopener" href="https://nathandavison.com/blog/abusing-http-hop-by-hop-request-headers">Abusing HTTP hop-by-hop request headers</a> 一文中 SSRF 的说明</h2><p>文中所述，该开始的时候有点难以理解，后经多次阅读后发现作者意思如下：SSRF 漏洞 ，中文为跨站伪造访问漏洞，攻击者通过该漏洞可以指引服务器发起请求，包括 HTTP 、FTP 等请求。假如可以在执行 SSFR 时候，攻击者还可以控制服务器发起请求时的请求头，那么或许可以结合 hop-by-hop 攻击进行组合利用。</p>
+<h2 id="关于-hop-by-hop-的漏洞"><a href="#关于-hop-by-hop-的漏洞" class="headerlink" title="关于 hop-by-hop 的漏洞"></a>关于 hop-by-hop 的漏洞</h2><p>CVE-2022-1388 </p>
+<h2 id="hop-by-hop的适用面"><a href="#hop-by-hop的适用面" class="headerlink" title="hop by hop的适用面"></a>hop by hop的适用面</h2><p>根据其他师傅的测试，apache、nginx、openresty、HAProxy，其中只有apache会消费掉Connection中的请求头，其他的要单独测试了。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://paper.seebug.org/1908/#hop-by-hop_1\">https://paper.seebug.org/1908/#hop-by-hop_1\</a><br><a target="_blank" rel="noopener" href="https://nathandavison.com/blog/abusing-http-hop-by-hop-request-headers">https://nathandavison.com/blog/abusing-http-hop-by-hop-request-headers</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/05/04/GWCTF-2019-WriteUP-%E5%8F%8A-PHP-mt-rand-%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98/" rel="prev" title="GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题">
+      <i class="fa fa-chevron-left"></i> GWCTF 2019 WriteUP 及 PHP mt_rand 安全问题
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#hop-by-hop-%E6%A0%87%E5%A4%B4%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86"><span class="nav-number">1.</span> <span class="nav-text">hop-by-hop 标头相关知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9C%E5%8F%89%E4%BF%82-hop-by-hop%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">乜叉係 hop-by-hop？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%BB%A5%E7%94%A8-hop-by-hop-header-%E7%9A%84%E4%B8%80%E4%BA%9B%E7%90%86%E8%AE%BA"><span class="nav-number">1.2.</span> <span class="nav-text">关于滥用 hop-by-hop header 的一些理论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%8F%91%E7%8E%B0%E7%B3%BB%E7%BB%9F%E4%B8%AD%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8-hop-by-hop-header"><span class="nav-number">1.3.</span> <span class="nav-text">如何发现系统中是否存在 hop-by-hop header</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E9%9A%90%E8%97%8F-X-Forwarded-For-%E6%9D%A5%E5%B1%8F%E8%94%BD%E5%8E%9F%E5%A7%8B-IP-%E5%9C%B0%E5%9D%80"><span class="nav-number">1.4.</span> <span class="nav-text">通过隐藏 X-Forwarded-For 来屏蔽原始 IP 地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E7%BA%B9%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.5.</span> <span class="nav-text">指纹服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E-Abusing-HTTP-hop-by-hop-request-headers-%E4%B8%80%E6%96%87%E4%B8%AD-SSRF-%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="nav-number">1.6.</span> <span class="nav-text">关于 Abusing HTTP hop-by-hop request headers 一文中 SSRF 的说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E-hop-by-hop-%E7%9A%84%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.7.</span> <span class="nav-text">关于 hop-by-hop 的漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hop-by-hop%E7%9A%84%E9%80%82%E7%94%A8%E9%9D%A2"><span class="nav-number">1.8.</span> <span class="nav-text">hop by hop的适用面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.9.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">singsing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">singsing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : 'ce73c92308eb771839a8d129faec6d35',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
