@@ -24,7 +24,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="从MSSQL报错注入到堆叠注入，实现命令执行">
 <meta property="og:url" content="http://example.com/2022/04/07/%E4%BB%8EMSSQL%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5%E5%88%B0%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/index.html">
-<meta property="og:site_name" content="singsing&#39;s Blog">
+<meta property="og:site_name" content="sing&#39;s Blog">
 <meta property="og:description" content="从MSSQL报错注入到堆叠注入，实现命令执行0x01-前言近日对一已授权的站点进行渗透测试，随手一个单引号，发现存在SQL报错信息。  0x02-报错注入尝试报错注入，发现系统存在两层防御，一个是云WAF，一个代码防御。开始使用分块传输绕过云WAF（使用的是Burpsuite插件：chunked-coding-converter-0.4.0），确实可以绕过。但后面使用 select 语句的时候，被">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage1.png">
@@ -34,7 +34,7 @@
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220407203229.png">
 <meta property="article:published_time" content="2022-04-07T12:44:36.000Z">
 <meta property="article:modified_time" content="2022-04-07T14:25:26.438Z">
-<meta property="article:author" content="singsing">
+<meta property="article:author" content="sing">
 <meta property="article:tag" content="MSSQL">
 <meta property="article:tag" content="sql server">
 <meta property="article:tag" content="sql注入">
@@ -54,7 +54,7 @@
   };
 </script>
 
-  <title>从MSSQL报错注入到堆叠注入，实现命令执行 | singsing's Blog</title>
+  <title>从MSSQL报错注入到堆叠注入，实现命令执行 | sing's Blog</title>
   
 
 
@@ -105,7 +105,7 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">singsing's Blog</h1>
+      <h1 class="site-title">sing's Blog</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
@@ -206,12 +206,12 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="singsing">
+      <meta itemprop="name" content="sing">
       <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="singsing's Blog">
+      <meta itemprop="name" content="sing's Blog">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -384,7 +384,7 @@
 
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">singsing</p>
+  <p class="site-author-name" itemprop="name">sing</p>
   <div class="site-description" itemprop="description"></div>
 </div>
 <div class="site-state-wrap motion-element">
@@ -433,7 +433,7 @@
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">singsing</span>
+  <span class="author" itemprop="copyrightHolder">sing</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
   </div>
