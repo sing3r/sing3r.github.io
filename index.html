@@ -211,10 +211,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-07-15 22:57:09 / Modified: 22:59:56" itemprop="dateCreated datePublished" datetime="2022-07-15T22:57:09+08:00">2022-07-15</time>
+              <time title="Created: 2022-07-15 22:57:09" itemprop="dateCreated datePublished" datetime="2022-07-15T22:57:09+08:00">2022-07-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-11-20 18:43:06" itemprop="dateModified" datetime="2022-11-20T18:43:06+08:00">2022-11-20</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -236,9 +242,9 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="hop-by-hop-标头相关知识"><a href="#hop-by-hop-标头相关知识" class="headerlink" title="hop-by-hop 标头相关知识"></a>hop-by-hop 标头相关知识</h1><h2 id="乜叉係-hop-by-hop？"><a href="#乜叉係-hop-by-hop？" class="headerlink" title="乜叉係 hop-by-hop？"></a>乜叉係 hop-by-hop？</h2><p>先解释下这是什么东西。根据 <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1">RFC 2612</a>，HTTP&#x2F;1.1 规范默认将以下标头视为 hop-by-hop ：<code>Keep-Alive</code>、<code>Transfer-Encoding</code>、<code>TE</code>、<code>Connection</code>、<code>Trailer</code>、<code>Upgrade</code>、<code>Proxy-Authorization</code> 和 <code>Proxy-Authenticate</code>。当在请求中遇到这些标头时，代理服务器会处理这些标头，并且不会将其转发到下一个节点。<br>除了这些默认值之外，请求还可以定义一组自定义的标头，<a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-14.10">通过将它们添加到 <code>Connection</code> 标头中被视为 hop-by-hop 处理</a>，如下所示：</p>
+          <h1 id="hop-by-hop-标头相关知识"><a href="#hop-by-hop-标头相关知识" class="headerlink" title="hop-by-hop 标头相关知识"></a>hop-by-hop 标头相关知识</h1><h2 id="乜叉係-hop-by-hop？"><a href="#乜叉係-hop-by-hop？" class="headerlink" title="乜叉係 hop-by-hop？"></a>乜叉係 hop-by-hop？</h2><p>先解释下这是什么东西。根据 <a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1">RFC 2612</a>，HTTP&#x2F;1.1 规范默认将以下标头视为 hop-by-hop ：<code>Keep-Alive</code>、<code>Transfer-Encoding</code>、<code>TE</code>、<code>Connection</code>、<code>Trailer</code>、<code>Upgrade</code>、<code>Proxy-Authorization</code> 和 <code>Proxy-Authenticate</code>。当在请求中遇到这些标头时，代理服务器会处理这些标头，并且不会将其转发到下一个节点。<br>除了这些默认值之外，用户还可以自定义逐跳标头，<a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc2616#section-14.10">只需要将标头的 key 添加到 <code>Connection</code> 标头的 value 中，即可被视为逐跳标头</a>，如下所示：</p>
 <figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Connection：close, X-Foo, X-Bar</span><br></pre></td></tr></table></figure>
-<p>上面代码表示，我们要求代理服务器将 <code>X-Foo</code> 和 <code>X-Bar</code> 视为 hop-by-hop，这表明我们希望代理在转发请求到下一跳之前将 <code>X-Foo</code> 和 <code>X-Bar</code> 从请求中删除。</p>
+<p>上面代码表示，我们要求代理服务器将 <code>X-Foo</code> 和 <code>X-Bar</code> 视为 hop-by-hop，这表明我们希望代理在转发请求到下一跳之前将 <code>X-Foo</code> 和 <code>X-Bar</code> 进行处理并删除。</p>
 <h2 id="关于滥用-hop-by-hop-header-的一些理论"><a href="#关于滥用-hop-by-hop-header-的一些理论" class="headerlink" title="关于滥用 hop-by-hop header 的一些理论"></a>关于滥用 hop-by-hop header 的一些理论</h2><p>直接删除某些 <code>header</code> ，不一定会导致问题，但要是能够删除原始请求中不存在的，由前端或 HTTP 请求流程链中的另一个代理添加的 <code>header</code> 可能会造成不可预测的结果。<br>例如，在一条 HTTP 请求链中，某个代理服务器可能会在请求包中插入了一个 <code>hearder</code> ，该 <code>header</code> 可能涉及到后端访问控制策略或者描述 <code>internet</code> 用户的真实地址，缺失该 <code>hearder</code> 会导致应用程序处理逻辑出错，从而输出大量的调试错误信息。当某个前端代理存在转发 <code>hop-by-hop header</code> 列表行为，而不是按到规定处理 <code>hop-by-hop header</code> 的时候就可能会产生问题，因为它添加到请求中的任何 <code>header</code> 都可能被 <code>next hop</code> 删除。<br>上面知识已经提及到，<code>Connection</code> 头本身是一个 <code>hop-by-hop</code> 头。这就意味着一个合符规范的代理服务器在转发请求时，应按照 <code>Connection</code> 头中的自定义<code>hop-by-hop</code> 头列表，删除相应的请求头，而不应将请求包中的自定义<code>hop-by-hop</code> 头列表通过 <code>Connection</code> 头转发给下一个服务器中。然而，研究表明，这可能并不总是像预期的那样发生，一些系统似乎也转发整个 <code>Connection</code> 头，或者复制 <code>hop-by-hop</code> 列表并将其附加到自己的 <code>Connection</code> 头中。</p>
 <p>下面的图表显示了 <code>hop-by-hop</code> 标头可能会造成的问题，如果后端期望 <code>X-Important-Header</code> 并将其纳入到逻辑决策中<br><img src="https://nathandavison.com/user/pages/01.blog/abusing-http-hop-by-hop-request-headers/hbh-theory-diagram.PNG" alt="img1"></p>
 <p>下面介绍遇到的滥用逐跳报头的例子，以及在哪里可以发现影响的一些想法，但潜在的结果将非常具体的应用程序和基础设施的目标，以及报头的目标和它们对后端意味着什么。</p>
