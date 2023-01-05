@@ -188,6 +188,78 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" class="post-title-link" itemprop="url">暴力破解之前端AES加密</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-18 11:50:23 / Modified: 22:15:46" itemprop="dateCreated datePublished" datetime="2022-03-18T11:50:23+08:00">2022-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318120459.png"></p>
+<h2 id="0x02-AES加密的参数"><a href="#0x02-AES加密的参数" class="headerlink" title="0x02-AES加密的参数"></a>0x02-AES加密的参数</h2><p>测试过程中，发现参数值经过加密，翻查JS文件，确认是AES加密。<br>一开始的想法是使用 Burpsuite 的 <code>JS Rainbow</code> 插件加载JS文件，自动执行加密函数加密参数值进行爆破，后发现导入字典测试的时候，由于字典内容为中文，会导致加密结果与预期不一致，后端无法解析加密后的数据，导致查询失败。<br>后续尝试使用 <code>BurpCrypto</code>、<code>AES KILLER</code>等 Burpsuite 插件时均与上面情况一样，中文内容加密与预期不一致。估计是由于 Burpsuite 软件自身问题。<br>再后使用 python 写个小程序，将字典加密，将加密结果作为字典导入 Burpsuite 爆破才成功。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png"></p>
+<p><strong>加密小程序源代码</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加密函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt</span>(<span class="params">text</span>):</span><br><span class="line">    key = <span class="string">b&#x27;FC5E8DF8BB4A2F78&#x27;</span></span><br><span class="line">    mode = AES.MODE_CBC</span><br><span class="line">    iv = <span class="string">b&#x27;!1@2#3$4%5^6&amp;7*8&#x27;</span></span><br><span class="line">    cryptos = AES.new(key, mode, iv)</span><br><span class="line">    padtext=pad(text,<span class="number">16</span>,style=<span class="string">&#x27;pkcs7&#x27;</span>)</span><br><span class="line">    cipherText=cryptos.encrypt(padtext)</span><br><span class="line">    <span class="keyword">return</span> base64.encodebytes(cipherText)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">r&#x27;500.txt&#x27;</span>,<span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> fs:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> fs.readlines():</span><br><span class="line">            name = <span class="built_in">bytes</span>(line.strip(),encoding=<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">            e = encrypt(name)</span><br><span class="line">            <span class="built_in">print</span>(<span class="built_in">str</span>(e.strip(), encoding = <span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/ThinkPHP6-0-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E-2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -430,7 +502,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -468,7 +540,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

