@@ -20,18 +20,18 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    记一次绕过 HttpOnly 的 XSS 攻击前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
+  <meta name="description" content="记一次绕过 HttpOnly 的 XSS 攻击 记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="sing&#39;s Blog">
 <meta property="og:url" content="http://example.com/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/index.html">
 <meta property="og:site_name" content="sing&#39;s Blog">
-<meta property="og:description" content="记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    记一次绕过 HttpOnly 的 XSS 攻击前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
+<meta property="og:description" content="记一次绕过 HttpOnly 的 XSS 攻击 记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImagecd39cd156fbd98fd9e82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png">
 <meta property="article:published_time" content="2023-02-06T12:38:59.797Z">
-<meta property="article:modified_time" content="2023-02-06T13:29:49.288Z">
+<meta property="article:modified_time" content="2023-02-06T13:32:44.672Z">
 <meta property="article:author" content="sing">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
@@ -221,7 +221,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-02-06 20:38:59 / Modified: 21:29:49" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
+              <time title="Created: 2023-02-06 20:38:59 / Modified: 21:32:44" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
             </span>
 
           
@@ -235,7 +235,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <ul>
+        <h1 id="记一次绕过-HttpOnly-的-XSS-攻击"><a href="#记一次绕过-HttpOnly-的-XSS-攻击" class="headerlink" title="记一次绕过 HttpOnly 的 XSS 攻击"></a>记一次绕过 HttpOnly 的 XSS 攻击</h1><ul>
 <li><a href="#%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-httponly-%E7%9A%84-xss-%E6%94%BB%E5%87%BB">记一次绕过 HttpOnly 的 XSS 攻击</a><ul>
 <li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
 <li><a href="#%E5%88%9D%E5%8F%91%E7%8E%B0">初发现</a></li>
@@ -246,7 +246,7 @@
 </ul>
 </li>
 </ul>
-<h1 id="记一次绕过-HttpOnly-的-XSS-攻击"><a href="#记一次绕过-HttpOnly-的-XSS-攻击" class="headerlink" title="记一次绕过 HttpOnly 的 XSS 攻击"></a>记一次绕过 HttpOnly 的 XSS 攻击</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 <code>alert()</code> 被 WAF，然后莫名奇妙折腾下去，遂有本文。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 <code>alert()</code> 被 WAF，然后莫名奇妙折腾下去，遂有本文。</p>
 <h2 id="初发现"><a href="#初发现" class="headerlink" title="初发现"></a>初发现</h2><p>站点网页 <a href="http://example.com/xxx/getCheckHouseList?estateNum=1111">http://example.com/xxx/getCheckHouseList?estateNum=1111</a> ，访问后，<code>estateNum=1111</code> 将会反映在 JavaScript 标签中。</p>
 <p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png"></p>
 <p>经过手工测试后，发现 <code>estateNum=1111</code> 存在 XSS 利用点，  尝试 <code>?estateNum=1111&#39;;alert()</code> ,发现服务器对请求不做应答。确认存在防御措施。</p>
