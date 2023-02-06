@@ -202,7 +202,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">记一次服务器应急响应</a>
         </h2>
 
         <div class="post-meta">
@@ -213,7 +213,16 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-02-06 20:38:59 / Modified: 21:32:44" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
+              <time title="Created: 2023-02-06 13:05:01 / Modified: 21:34:39" itemprop="dateCreated datePublished" datetime="2023-02-06T13:05:01+08:00">2023-02-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/web-%E5%AE%89%E5%85%A8/" itemprop="url" rel="index"><span itemprop="name">web 安全</span></a>
+                </span>
             </span>
 
           
@@ -227,7 +236,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="记一次绕过-HttpOnly-的-XSS-攻击"><a href="#记一次绕过-HttpOnly-的-XSS-攻击" class="headerlink" title="记一次绕过 HttpOnly 的 XSS 攻击"></a>记一次绕过 HttpOnly 的 XSS 攻击</h1><ul>
+          <ul>
 <li><a href="#%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-httponly-%E7%9A%84-xss-%E6%94%BB%E5%87%BB">记一次绕过 HttpOnly 的 XSS 攻击</a><ul>
 <li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
 <li><a href="#%E5%88%9D%E5%8F%91%E7%8E%B0">初发现</a></li>
@@ -238,7 +247,7 @@
 </ul>
 </li>
 </ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 <code>alert()</code> 被 WAF，然后莫名奇妙折腾下去，遂有本文。</p>
+<h1 id="记一次绕过-HttpOnly-的-XSS-攻击"><a href="#记一次绕过-HttpOnly-的-XSS-攻击" class="headerlink" title="记一次绕过 HttpOnly 的 XSS 攻击"></a>记一次绕过 HttpOnly 的 XSS 攻击</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 <code>alert()</code> 被 WAF，然后莫名奇妙折腾下去，遂有本文。</p>
 <h2 id="初发现"><a href="#初发现" class="headerlink" title="初发现"></a>初发现</h2><p>站点网页 <a href="http://example.com/xxx/getCheckHouseList?estateNum=1111">http://example.com/xxx/getCheckHouseList?estateNum=1111</a> ，访问后，<code>estateNum=1111</code> 将会反映在 JavaScript 标签中。</p>
 <p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png"></p>
 <p>经过手工测试后，发现 <code>estateNum=1111</code> 存在 XSS 利用点，  尝试 <code>?estateNum=1111&#39;;alert()</code> ,发现服务器对请求不做应答。确认存在防御措施。</p>
@@ -1548,12 +1557,12 @@
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
