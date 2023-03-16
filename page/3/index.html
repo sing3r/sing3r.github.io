@@ -188,6 +188,109 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="sing">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sing's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/03/19/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E4%B9%8Bssh%E5%8F%8D%E5%90%91%E9%9A%A7%E9%81%93/" class="post-title-link" itemprop="url">内网穿透之ssh反向隧道</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-03-19 11:03:39 / Modified: 11:24:21" itemprop="dateCreated datePublished" datetime="2022-03-19T11:03:39+08:00">2022-03-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/" itemprop="url" rel="index"><span itemprop="name">内网穿透</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="ssh反向隧道"><a href="#ssh反向隧道" class="headerlink" title="ssh反向隧道"></a>ssh反向隧道</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一种简单的内网穿透方式</p>
+<h2 id="场景示例"><a href="#场景示例" class="headerlink" title="场景示例"></a>场景示例</h2><p><img src="https://raw.githubusercontents.com/sing3r/image/main/hexoImage473fb8ec7ad265461809000af8c0d6b3402d6d2d6db7573a4694e7980c08b640.png"></p>
+<h2 id="设置"><a href="#设置" class="headerlink" title="设置"></a>设置</h2><h3 id="VPS"><a href="#VPS" class="headerlink" title="VPS"></a>VPS</h3><ol>
+<li>&#x2F;etc&#x2F;ssh&#x2F;sshd_config，GatewayPorts参数值为yes</li>
+<li>systemctl restart sshd.service，重启ssh服务</li>
+</ol>
+<h3 id="内网电脑"><a href="#内网电脑" class="headerlink" title="内网电脑"></a>内网电脑</h3><p><strong>简单建立ssh反向隧道</strong> <br>执行命令：<code>ssh -ngfNTR &lt;VPS监听端口&gt;:&lt;内网主机IP&gt;:&lt;内网主机需要转发到VPS的端口&gt; root@&lt;VPS地址&gt; -o ServerAliveInterval=300</code>。例如：<code>ssh -ngfNTR 80:127.0..0.1:22 root@150.158.xx.xx -o ServerAliveInterval=300</code></p>
+<ul>
+<li>-f 表示后台执行</li>
+<li>-N 表示不执行任何命令</li>
+<li>-R 建立反向隧道</li>
+<li>1222 A机用来外面ssh的监听端口</li>
+<li>-o ServerAliveInterval&#x3D;300 的意思是让ssh client每300秒就给server发个心跳,以免链路被RST. </li>
+<li>-f Requests ssh to go to background just before command execution. 让该命令后台运行 . </li>
+<li>-n Redirects stdin from &#x2F;dev&#x2F;null (actually, prevents reading from stdin). </li>
+<li>-N Do not execute a remote command. 不执行远程命令 . </li>
+<li>-T Disable pseudo-tty allocation. 不占用 shell . </li>
+<li>-g Allows remote hosts to connect to local forwarded ports.</li>
+</ul>
+<p><strong>持久建立ssh反向隧道-1</strong> </p>
+<ol>
+<li>安装autossh；</li>
+<li>新建<code>/opt/sshPortMapping.sh</code>，赋予644权限，内容为:<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/sh</span></span><br><span class="line">autossh -M 7890 -NR 80:127.0.0.1:22 root@150.158.xx.xx -i ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure></li>
+<li>新建开机自启动服务文件 <code>/usr/lib/systemd/system/autosshd.service</code>：<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Auto SSH Tunnel</span><br><span class="line">After=network-online.target</span><br><span class="line">StartLimitInterval=10</span><br><span class="line">[Service]</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">User=root</span></span><br><span class="line">Type=simple</span><br><span class="line">ExecStart=/bin/bash /opt/sshPortMapping.sh</span><br><span class="line">ExecReload=/bin/kill -HUP $MAINPID</span><br><span class="line">KillMode=process</span><br><span class="line">Restart=always</span><br><span class="line">RestartSec=5</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=graphical.target</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">WantedBy=default.target</span></span><br></pre></td></tr></table></figure></li>
+<li>设置为开机自启动服务：<code>systemctl enable autosshd.service</code></li>
+<li>启动服务：<code>systemctl start autosshd </code></li>
+</ol>
+<blockquote>
+<p><strong>PS：</strong> 因为autossh需要交互输入vps的密码，存在不便。所以使用证书登陆，autossh通过-i指定证书文件进行免密登陆，所以“持久建立ssh反向隧道”还需要在内网主机生成证书，并将公钥上传vps。<br>   6. 至此，其他机器就可以<code>ssh root@150.158.84.84 -p 80</code>访问内网主机。 </p>
+</blockquote>
+<p><strong>持久建立ssh反向隧道-2</strong></p>
+<p>将<code>/opt/sshPortMapping.sh</code>代码替换为以下，其余同“持久建立ssh反向隧道-1”操作一样：<br><code>autossh -M 7890 -fN -o &quot;PubkeyAuthentication=yes&quot; -o &quot;StrictHostKeyChecking=false&quot; -o &quot;PasswordAuthentication=no&quot; -o &quot;ServerAliveInterval 60&quot; -o &quot;ServerAliveCountMax 3&quot; -R 80:127.0.0.1:22 root@150.158.84.84 -i ~/.ssh/id_rsa</code></p>
+<h2 id="基于ssh反向隧道建立socket代理"><a href="#基于ssh反向隧道建立socket代理" class="headerlink" title="基于ssh反向隧道建立socket代理"></a>基于ssh反向隧道建立socket代理</h2><p>通过上面的设置已经可以访问内网主机的ssh端口，基于以上，在其他client主机上执行以下命令：<code>ssh -N -D 127.0.0.1:9999 root@150.158.xx.xx -p 80</code>。接下来就可以将浏览器浏代理设置为<code>socket//127.0.0.1:9999</code>，将内网主机将作为代理服务器。</p>
+<h2 id="踩坑"><a href="#踩坑" class="headerlink" title="踩坑"></a>踩坑</h2><ol>
+<li>测试中，非root用户无法无法建立转发，原因未明。</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/18/%E9%80%9A%E8%BF%87-Office-Open-XML-%E8%A7%A3%E6%9E%90%E5%99%A8%E8%BF%9B%E8%A1%8CXXE%E6%94%BB%E5%87%BB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -583,13 +686,13 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
